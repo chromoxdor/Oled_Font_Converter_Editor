@@ -307,7 +307,7 @@ Copyright (c) 2016 by Fabrice Weinberg
   <div id="fButtons" style="display:flex;gap:6px; justify-content: space-between;">
     <div style="display: flex; gap: 5px; align-items: flex-start;">
       <button id="parse" class="tiny">Edit Font</button>
-      <button id="generate" class="tiny">Update Font</button>
+      <button id="generate" class="tiny">Update Font (q)</button>
       <label id=live class="tiny">
         <input type="checkbox" id="liveUpdate">
         Live update (best for small fonts <= 20px) </label>
@@ -353,6 +353,9 @@ Copyright (c) 2016 by Fabrice Weinberg
             </colgroup>
             <tr>
               <td colspan="2">Draw / erase char pixels by mouse click and drag</td>
+            </tr>
+             <tr>
+              <td colspan="2">Press 'q' to update the font manually</td>
             </tr>
             <tr>
               <td>✗</td>
@@ -1031,6 +1034,7 @@ ${dataLines.join('\n')}
           alert('No font in editor');
           return;
         }
+        isGenerating = true
         console.log('Generate font from editor');
         // Show overlay first
         pendingGeneration();
@@ -1058,7 +1062,7 @@ ${dataLines.join('\n')}
       }
 
 
-      document.getElementById('addCharBottom').addEventListener('click', () => { if (editorFont) editorFont.addChar(); });
+      document.getElementById('addCharBottom').addEventListener('click', () => { if (editorFont) editorFont.addChar(); waitforGenerateF(); });
       document.getElementById('width').addEventListener('input', function () {
         waitforGenerateF();
 
@@ -1074,6 +1078,13 @@ ${dataLines.join('\n')}
         });
       }
 
+      document.addEventListener("keydown", (event) => {
+        // Only trigger on "u" key (lowercase)
+        if (event.key === "q") {
+          event.preventDefault(); // stop typing 'u' into inputs
+          generateF();
+        }
+      });
 
       /* ---------------- Interaction: click, hold & drag, actions ---------------- */
 
@@ -1083,7 +1094,7 @@ ${dataLines.join('\n')}
 
         const target = e.target.closest('td[action="toggle"], th[action]');
         if (!target) return;
-
+        waitforGenerateF()
         const action = target.getAttribute('action') || '';
 
         if (action && action !== 'toggle') {
@@ -1120,7 +1131,7 @@ ${dataLines.join('\n')}
                 if (cap) cap.textContent = `${cap.textContent.split(' ')[0]} (empty)`;
               }
               console.log('delete char');
-              waitforGenerateF(); // call the delayed regenerate
+              //waitforGenerateF(); // call the delayed regenerate
             } break;
             case 'left': {
               for (let p = 0; p < pixels.length; p++) {
@@ -1128,7 +1139,7 @@ ${dataLines.join('\n')}
                   pixels[p].className = pixels[p + 1].className;
                 } else pixels[p].className = 'out';
               }
-              waitforGenerateF();
+              //waitforGenerateF();
             } break;
             case 'right': {
               for (let p = pixels.length - 1; p >= 0; p--) {
@@ -1136,7 +1147,7 @@ ${dataLines.join('\n')}
                   pixels[p].className = pixels[p - 1].className;
                 } else pixels[p].className = '';
               }
-              waitforGenerateF();
+              //waitforGenerateF();
             } break;
             case 'up': {
               for (let p = 0; p < pixels.length; p++) {
@@ -1146,7 +1157,7 @@ ${dataLines.join('\n')}
                   pixels[p].className = pixels[p].classList.contains('out') ? 'out' : '';
                 }
               }
-              waitforGenerateF();
+              //waitforGenerateF();
             } break;
             case 'down': {
               for (let p = pixels.length - 1; p >= 0; p--) {
@@ -1156,7 +1167,7 @@ ${dataLines.join('\n')}
                   pixels[p].className = pixels[p].classList.contains('out') ? 'out' : '';
                 }
               }
-              waitforGenerateF();
+              //waitforGenerateF();
             } break;
             case 'tight':
             case 'release':
@@ -1183,14 +1194,14 @@ ${dataLines.join('\n')}
                 }
               }
               table.jumpData[3] = xAdv;
-              waitforGenerateF();
+              //waitforGenerateF();
               break;
             case 'clean':
               if (confirm('Delete the pixels ?')) {
                 for (let p = 0; p < pixels.length; p++) pixels[p].className = '';
               }
               table.jumpData[3] = editorFont.width; // reset xAdvance
-              waitforGenerateF();
+              //waitforGenerateF();
               break;
             case 'copy': {
               const charNumber = parseInt(prompt('Source char #:'));
@@ -1205,7 +1216,7 @@ ${dataLines.join('\n')}
                 dst[i].className = src[i].className;
               }
               table.jumpData[3] = xAdv; // recalc after copy if needed
-              waitforGenerateF();
+              //waitforGenerateF();
             } break;
 
 
@@ -1249,17 +1260,17 @@ ${dataLines.join('\n')}
       }
       function waitforGenerateF() {
         if (isGenerating) return;
-        isGenerating = true
         if (document.getElementById('liveUpdate').checked) {
           document.getElementById('generate').style.visibility = 'hidden';
           document.getElementById('generate').style.pointerEvents = 'none';
-          if (generateTimer) clearTimeout(generateTimer);
-
-          // setze den Timer auf 1 Sekunde
+          clearTimeout(generateTimer);
+          console.log('Schedule generateF in 1.5s');
+    
           generateTimer = setTimeout(() => {
+           if (!isMouseDown) {
             generateF();
-            generateTimer = null; // aufräumen
-          }, 1000);
+           }
+          }, 1500);
         }
         else {
           document.getElementById('generate').style.visibility = 'visible';
@@ -1267,8 +1278,10 @@ ${dataLines.join('\n')}
         }
       }
 
+
       let generateTimer = null;
       let isGenerating = false;
+  
 
     })();
 
