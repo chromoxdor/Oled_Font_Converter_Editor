@@ -252,7 +252,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       text-align: center;
     }
 
-    #live{
+    #live {
       border-radius: 0 0 5px 5px;
       background: #97d3ef;
 
@@ -280,10 +280,13 @@ Copyright (c) 2016 by Fabrice Weinberg
 
   <div style="display:grid; grid-template-columns: 1fr 40px; gap:8px 2px; width: 180px; align-items:center;">
     <label for="fontSize" style="text-align:left;">Font size (px):</label>
-    <input type="number" id="fontSize" class="editable" value="20" style="width:100%;" step="1">
+    <input type="number" id="fontSize" class="editable" value="20" min="2" max="200" style="width:100%;" step="1">
 
     <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
-    <input type="number" id="extraTop" class="editable" value="0" style="width:100%;" step="1">
+    <input type="number" id="extraTop" class="editable" value="0" min="0" max="200" style="width:100%;" step="1">
+
+    <label for="threshold" style="text-align:left;">Threshold (0–255):</label>
+    <input type="number" id="threshold" class="editable" value="128" min="0" max="255" style="width:100%;" step="1">
   </div>
 
   <div
@@ -303,10 +306,9 @@ Copyright (c) 2016 by Fabrice Weinberg
     <div style="display: flex; gap: 5px; align-items: flex-start;">
       <button id="parse" class="tiny">Edit Font</button>
       <button id="generate" class="tiny">Update Font</button>
-      <label id= live class="tiny">
+      <label id=live class="tiny">
         <input type="checkbox" id="liveUpdate">
-        Live update (best for small fonts <= 20px)
-      </label>
+        Live update (best for small fonts <= 20px) </label>
     </div>
     <div>
       <button id="downloadH" class="tiny">Save to File</button>
@@ -421,20 +423,23 @@ Copyright (c) 2016 by Fabrice Weinberg
     (async () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      let glyphs = [], fontFace, fontName = 'MyFont', fontSize = 20, extraTop = 0;
+      let glyphs = [], fontFace, fontName = 'MyFont', fontSize = 20, extraTop = 0, pixelThreshold = 128;
 
       function createCanvasForGlyph(width, height) {
         canvas.width = width; canvas.height = height;
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = 'black'; ctx.textBaseline = 'top';
       }
+
       function drawGlyph(ch, width, height) {
         createCanvasForGlyph(width, height);
         ctx.font = `${fontSize}px "${fontName}"`;
         ctx.fillText(ch, 0, extraTop);
         return ctx.getImageData(0, 0, width, height);
       }
-      function convertToBytes(imageData, width, height) {
+
+      // now takes a threshold parameter
+      function convertToBytes(imageData, width, height, threshold = 128) {
         const arrayHeight = Math.ceil(height / 8);
         const bytes = [];
         for (let x = 0; x < width; x++) {
@@ -444,7 +449,12 @@ Copyright (c) 2016 by Fabrice Weinberg
               const y = yBlock * 8 + bit;
               if (y >= height) continue;
               const idx = (y * width + x) * 4;
-              if (imageData.data[idx + 3] > 128) byte |= 1 << bit;
+
+              const a = imageData.data[idx + 3]; // alpha channel only
+
+              if (a >= threshold) {
+                byte |= 1 << bit;
+              }
             }
             bytes.push(byte);
           }
@@ -455,6 +465,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         if (lastNonZero < 0) lastNonZero = bytes.length - 1;
         return bytes.slice(0, lastNonZero + 1);
       }
+
       function hex(b) { return '0x' + b.toString(16).padStart(2, '0').toUpperCase(); }
 
       function renderGlyphs(scale = 3) { // default scale 3x
@@ -504,6 +515,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
         fontSize = parseInt(document.getElementById('fontSize').value) || 20;
         extraTop = parseInt(document.getElementById('extraTop').value) || 0;
+        pixelThreshold = parseInt(document.getElementById('threshold').value) || 128;
 
         try {
           //If no file, but URL is set → fetch it
@@ -514,7 +526,6 @@ Copyright (c) 2016 by Fabrice Weinberg
             const arrayBuffer = await response.arrayBuffer();
             const fontData = new Uint8Array(arrayBuffer);
             file = new File([fontData], url.split('/').pop() || "remoteFont.ttf", { type: "font/ttf" });
-
           }
 
           // If still no file → fail
@@ -544,7 +555,7 @@ Copyright (c) 2016 by Fabrice Weinberg
             const ch = String.fromCharCode(code);
             const w = Math.max(1, Math.ceil(ctx.measureText(ch).width));
             const img = drawGlyph(ch, w, maxHeight);
-            const bytes = convertToBytes(img, w, maxHeight);
+            const bytes = convertToBytes(img, w, maxHeight, pixelThreshold);
             glyphs.push({
               code,
               bytes: bytes.length ? bytes : new Array(Math.ceil(maxHeight / 8) * w).fill(0),
@@ -1186,7 +1197,7 @@ ${dataLines.join('\n')}
       }
       function waitforGenerateF() {
         if (isGenerating) return;
-        isGenerating=true
+        isGenerating = true
         if (document.getElementById('liveUpdate').checked) {
           document.getElementById('generate').style.visibility = 'hidden';
           document.getElementById('generate').style.pointerEvents = 'none';
