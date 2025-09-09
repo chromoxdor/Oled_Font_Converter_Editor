@@ -286,15 +286,16 @@ Copyright (c) 2016 by Fabrice Weinberg
     <input type="number" id="extraTop" class="editable" value="0" min="0" max="200" style="width:100%;" step="1">
 
     <label for="boldness">Boldness:</label>
-    <div></div>
-    <input type="range" id="boldness" min="0" max="255" value="128" style="width:100%;" step="1">
-    <span id="boldnessValue">128</span></div>
+    <div><button id="resetBoldness" type="button">Reset</button></div>
+    <input type="range" id="boldness" min="0" max="254" value="128" style="width:100%;" step="1">
+    <span id="boldnessValue">128</span>
+  </div>
 
-    <div
-      style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
-      <button id="loadFont" class="tiny">Load & Convert</button>
-      <button id="create" class="tiny">Create New</button>
-    </div>
+  <div
+    style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
+    <button id="loadFont" class="tiny">Load & Convert</button>
+    <button id="create" class="tiny">Create New</button>
+  </div>
   </div>
 
   <div id="glyphs" aria-label="Glyph previews"></div>
@@ -514,20 +515,55 @@ Copyright (c) 2016 by Fabrice Weinberg
       const boldnessSlider = document.getElementById('boldness');
       const boldnessValue = document.getElementById('boldnessValue');
       const loadFontBtn = document.getElementById('loadFont');
+      const resetBoldnessBtn = document.getElementById('resetBoldness');
+
+      let updateTimer = null;
+      const fontSizeInput = document.getElementById('fontSize');
+      const extraTopInput = document.getElementById('extraTop');
+
+      const fileInput = document.getElementById('fontFile');
+      const urlInput = document.getElementById('fontUrl');
+
+      //const liveUpdateOptions = document.getElementById('liveUpdateOptions');
+
+      function scheduleUpdate() {
+        //if (!liveUpdateOptions.checked) return; // Only if live update is enabled
+        let file = fileInput.files[0];
+        console.log(file, urlInput.value.trim())
+        if (!file && !urlInput.value.trim()) return
+        clearTimeout(updateTimer);
+        updateTimer = setTimeout(() => {
+          loadFontBtn.click();  // re-run conversion
+        }, 100); // delay in ms
+      }
+
+      fontSizeInput.addEventListener('input', scheduleUpdate);
+      extraTopInput.addEventListener('input', scheduleUpdate);
 
       // update text next to slider + trigger regenerate
+
       boldnessSlider.addEventListener('change', () => {
         boldnessValue.textContent = boldnessSlider.value;
-
+        let file = fileInput.files[0];
+        if (!file && !urlInput.value.trim()) return
         // only auto-reload if a font is already loaded
         if (glyphs.length > 0) {
           loadFontBtn.click();
         }
       });
 
+      resetBoldnessBtn.addEventListener('click', () => {
+        boldnessSlider.value = 128;   // default
+        boldnessValue.textContent = "128";
+
+        let file = fileInput.files[0];
+        if (!file && !urlInput.value.trim()) return
+        if (glyphs.length > 0) {
+          loadFontBtn.click();
+        }
+      });
+
       document.getElementById('loadFont').addEventListener('click', async () => {
-        const fileInput = document.getElementById('fontFile');
-        const urlInput = document.getElementById('fontUrl');
         let file = fileInput.files[0];
 
         fontSize = parseInt(document.getElementById('fontSize').value) || 20;
