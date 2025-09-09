@@ -420,7 +420,6 @@ Copyright (c) 2016 by Fabrice Weinberg
 
 
 
-
     /* ---------------- Converter code ---------------- */
     (async () => {
       const canvas = document.createElement('canvas');
@@ -655,7 +654,8 @@ Copyright (c) 2016 by Fabrice Weinberg
         const blob = new Blob([data], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `${fontName}_oled.h`;
+        const editName = document.getElementById("name")?.value.trim();
+        a.download = `${editName && editName.length > 0 ? editName : fontName}_oled.h`;
         a.click();
       });
 
