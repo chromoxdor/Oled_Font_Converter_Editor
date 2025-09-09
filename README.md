@@ -7,7 +7,7 @@ If you like my work consider a donation: [![donate](https://img.shields.io/badge
 
  
 
-<img width="1143" height="825" alt="Bildschirmfoto 2025-09-09 um 11 56 04" src="https://github.com/user-attachments/assets/e91e1c27-ad76-4c8d-9f9f-f2b3b406d250" />
+<img width="1125" height="929" alt="Bildschirmfoto 2025-09-09 um 19 41 30" src="https://github.com/user-attachments/assets/97d7fb18-9050-49ac-8865-1d2e63d9405b" />
 
 
 ## Examples
