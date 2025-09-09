@@ -173,9 +173,10 @@ Copyright (c) 2016 by Fabrice Weinberg
 
     .char-item th,
     .char-item td {
+      box-sizing: border-box;
       border: 1px solid #CCC;
-      width: 20px;
-      height: 20px;
+      width: 12px;
+      height: 12px;
       padding: 0;
       margin: 0;
       text-align: center;
@@ -214,6 +215,7 @@ Copyright (c) 2016 by Fabrice Weinberg
     .editable::-webkit-outer-spin-button {
       opacity: 1;
     }
+
   </style>
 </head>
 
@@ -870,8 +872,6 @@ ${dataLines.join('\n')}
 
         editorFont = new FontEditor();
         editorFont.addChar();
-        document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000";
-        document.getElementById('glyphs').style.height = "300px";
         srollToEditor();
         generateF();
       });
@@ -895,6 +895,8 @@ ${dataLines.join('\n')}
       });
 
       function srollToEditor() {
+        document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000";
+        document.getElementById('glyphs').style.height = "300px";
         document.getElementById('editorSection').style.display = 'block';
         document.getElementById('output').scrollIntoView({
           behavior: 'smooth',
