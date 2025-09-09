@@ -219,6 +219,12 @@ Copyright (c) 2016 by Fabrice Weinberg
       opacity: 1;
     }
 
+    #generate {
+      /* initially hidden */
+      visibility: hidden;
+      pointer-events: none;
+    }
+
     #overlay {
       position: fixed;
       top: 0;
@@ -293,7 +299,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       <button id="generate" class="tiny">Update Font</button>
       <label class="tiny">
         <input type="checkbox" id="liveUpdate">
-        Live update
+        Live update (best for small fonts <= 20px)
       </label>
     </div>
     <div>
@@ -875,7 +881,7 @@ ${dataLines.join('\n')}
       function parseFont(bPressed = false) {
 
         const txt = document.getElementById('output').value || '';
-        if (!txt.trim()) { alert('Shared output is empty'); return; }
+        if (!txt.trim()) { alert('Shared output is empty'); hideOverlay(); return; }
         const cleaned = txt.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1').trim();
         const nameMatch = cleaned.match(/const\s+char\s+([A-Za-z0-9_\-]+)\s*\[\]\s*PROGMEM\s*=/);
         const fontArrayName = nameMatch ? nameMatch[1] : '';
@@ -950,6 +956,8 @@ ${dataLines.join('\n')}
       });
 
       document.getElementById('generate').addEventListener('click', () => {
+        document.getElementById('generate').style.visibility = 'hidden';
+        document.getElementById('generate').style.pointerEvents = 'none';
         generateF();
       });
 
@@ -959,7 +967,6 @@ ${dataLines.join('\n')}
           return;
         }
         console.log('Generate font from editor');
-
         // Show overlay first
         pendingGeneration();
 
@@ -967,8 +974,12 @@ ${dataLines.join('\n')}
         setTimeout(() => {
           editorFont.generate(); // heavy generation
           parseFont();           // update preview
-          hideOverlay();         // hide overlay after done
+          hideOverlay();
         }, 50); // 50ms is enough for repaint
+
+        setTimeout(() => {
+          isGenerating = false;        // hide overlay after done
+        }, 1000); // 50ms is enough for repaint
       }
 
       function pendingGeneration() {
@@ -1172,7 +1183,11 @@ ${dataLines.join('\n')}
         waitforGenerateF();
       }
       function waitforGenerateF() {
+        if (isGenerating) return;
+        isGenerating=true
         if (document.getElementById('liveUpdate').checked) {
+          document.getElementById('generate').style.visibility = 'hidden';
+          document.getElementById('generate').style.pointerEvents = 'none';
           if (generateTimer) clearTimeout(generateTimer);
 
           // setze den Timer auf 1 Sekunde
@@ -1181,9 +1196,14 @@ ${dataLines.join('\n')}
             generateTimer = null; // aufräumen
           }, 1000);
         }
+        else {
+          document.getElementById('generate').style.visibility = 'visible';
+          document.getElementById('generate').style.pointerEvents = 'auto';
+        }
       }
 
       let generateTimer = null;
+      let isGenerating = false;
 
     })();
 
