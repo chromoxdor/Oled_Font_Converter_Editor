@@ -516,7 +516,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       const loadFontBtn = document.getElementById('loadFont');
 
       // update text next to slider + trigger regenerate
-      boldnessSlider.addEventListener('input', () => {
+      boldnessSlider.addEventListener('change', () => {
         boldnessValue.textContent = boldnessSlider.value;
 
         // only auto-reload if a font is already loaded
