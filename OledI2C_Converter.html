@@ -1,0 +1,1094 @@
+<!--
+Mashed together by chromoxdor and some AI
+
+The OLED Font Converter section is based on:
+https://github.com/squix78/esp8266-oled-ssd1306-font-converter/blob/master/src/main/java/ch/squix/esp8266/fontconverter/rest/FontConverterV3.java
+
+
+The Glyph Editor section is based on:
+https://github.com/ThingPulse/esp8266-oled-ssd1306/blob/master/resources/glyphEditor.html
+
+Copyright (c) 2017 by Xavier Grosjean
+
+Based on work 
+Copyright (c) 2016 by Daniel Eichhorn
+Copyright (c) 2016 by Fabrice Weinberg
+
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>OLED Font Converter + Glyph Editor</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background: #97d3ef;
+    }
+
+    h2,
+    h3 {
+      margin: .5rem 0;
+    }
+
+    /* Controls */
+    #controls {
+      margin-bottom: 10px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    #controls>div {
+      min-width: 180px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    /* Converter glyph preview */
+    #glyphs {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #97d3ef;
+      /*border-bottom: 1px solid #ccc;*/
+      padding: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      height: 0;
+      overflow-y: auto;
+      resize: vertical;
+    }
+
+    #outputContainer,
+    #editorSection {
+      margin-top: 320px;
+      /* adjust depending on #glyphs max-height */
+    }
+
+    .glyph {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: default;
+      background: #f3f3f3;
+      padding: 4px;
+      border-radius: 4px;
+      height: fit-content;
+    }
+
+    .glyph canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    .glyph-label {
+      font-size: 11px;
+      margin-top: 4px;
+      text-align: center;
+      color: #333;
+    }
+
+    /* Shared output textarea */
+    #outputContainer {
+      margin-top: 0px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    #output {
+      width: 100%;
+      height: 260px;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 8px;
+      box-sizing: border-box;
+      white-space: pre;
+    }
+
+    /* Editor area */
+    #editorSection {
+      margin-top: 22px;
+      border-top: 1px solid #ccc;
+      padding-top: 12px;
+      display: none;
+    }
+
+    #editorForm table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #editorForm td {
+      vertical-align: middle;
+      padding: 4px;
+    }
+
+    #editorControls {
+      margin-top: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* Char items (flex) */
+    #chars {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .char-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      background: #fff;
+      padding: 6px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+
+    .char-item table {
+      border-collapse: collapse;
+      background: transparent;
+    }
+
+    .char-item caption {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .char-item th,
+    .char-item td {
+      border: 1px solid #CCC;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      margin: 0;
+      text-align: center;
+      font-size: 11px;
+      user-select: none;
+      background: #FFF;
+    }
+
+    .char-item th[action] {
+      cursor: pointer;
+      background: #F2F2F2;
+      font-size: 11px;
+    }
+
+    .char-item td.on {
+      background: #0A6;
+      background: #00F;
+    }
+
+    /* turn blue */
+    .char-item td.out {
+      background: #EEE;
+    }
+
+    /* small helper */
+    .tiny {
+      font-size: 12px;
+      padding: 6px 8px;
+    }
+
+    #generate {
+      display: none;
+    }
+
+    .editable::-webkit-inner-spin-button,
+    .editable::-webkit-outer-spin-button {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>OLED Font Converter</h2>
+  <div id="controls" style="display:flex; justify-content: flex-start; align-items: center; gap: 100px;">
+    <div>
+      <label style="font-weight:600; display:block; margin-bottom:4px;">Font file (TTF/OTF):</label>
+      <input type="file" id="fontFile" accept=".ttf,.otf">
+    </div>
+    <div>
+      <label style="font-weight:600; display:block; margin-bottom:4px;">Font URL:</label>
+      <input type="url" id="fontUrl" placeholder="https://example.com/font.ttf" style="width:100%; padding:4px;">
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 40px; gap:8px 2px; width: 180px; align-items:center;">
+    <label for="fontSize" style="text-align:left;">Font size (px):</label>
+    <input type="number" id="fontSize" class="editable" value="20" style="width:100%;" step="1">
+
+    <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
+    <input type="number" id="extraTop" class="editable" value="0" style="width:100%;" step="1">
+  </div>
+
+  <div
+    style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
+    <button id="loadFont" class="tiny">Load & Convert</button>
+    <button id="create" class="tiny">Create New</button>
+  </div>
+  </div>
+
+  <div id="glyphs" aria-label="Glyph previews"></div>
+
+  <div id="outputContainer">
+    <textarea id="output"
+      placeholder="// Font output will appear here or past your font data here and press edit"></textarea>
+  </div>
+  <div style="display:flex;gap:6px; justify-content: space-between;">
+    <button id="parse" class="tiny">Edit Font</button>
+    <div>
+      <button id="downloadH" class="tiny">Save to File</button>
+      <button id="copyClipboard" class="tiny">Copy to Clipboard</button>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div id="editorSection">
+    <h3>Glyph Editor</h3>
+    <div id="editorForm">
+      <div style="display: flex;justify-content: flex-start;">
+        <div>
+          <table>
+            <tr>
+              <td style="width:160px">Font array name:</td>
+              <td><input type="text" id="name" placeholder="My_Font" style="width:160px"></td>
+              <td rowspan="4" style="width:48%"><!-- shared textarea is above; editor uses it --></td>
+            </tr>
+            <tr>
+              <td>First char code:</td>
+              <td><input type="number" id="code" value="32" style="width:160px"></td>
+            </tr>
+            <tr>
+              <td>Width (adjustable):</td>
+              <td><input type="number" id="width" class="editable" value="" style="width:160px" step="1"></td>
+            </tr>
+            <tr>
+              <td>Height:</td>
+              <td><input type="number" id="height" value="" style="width:160px" max="64" readonly></td>
+            </tr>
+          </table>
+        </div>
+        <!-- Help table -->
+        <div>
+          <table id="help" style="color:#666;font-size: 10px; border-collapse: collapse; width: 100%;">
+            <colgroup>
+              <col style="width: 30px; text-align: right;">
+              <col>
+            </colgroup>
+            <tr>
+              <td colspan="2">Draw / erase char pixels by mouse click and drag</td>
+            </tr>
+            <tr>
+              <td>✗</td>
+              <td>Delete this char</td>
+            </tr>
+            <tr>
+              <td>+</td>
+              <td>Add new char above</td>
+            </tr>
+            <tr>
+              <td>←↓↑→</td>
+              <td>Move all pixels</td>
+            </tr>
+            <tr>
+              <td>(</td>
+              <td>Extend occupied width</td>
+            </tr>
+            <tr>
+              <td>)</td>
+              <td>Reduce occupied width</td>
+            </tr>
+            <tr>
+              <td>I</td>
+              <td>Import all pixels from another char</td>
+            </tr>
+            <tr>
+              <td>C</td>
+              <td>Clean all pixels of current char</td>
+            </tr>
+            <tr>
+              <td colspan="2">"Add a character" button: Add new char at the end</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <!-- <div id="editorControls">
+        <button id="parse" class="tiny">Edit Font</button>
+        <button id="generate" class="tiny">Generate</button>
+        <button id="create" class="tiny">Create New</button>
+        <span style="color:#666;font-size:12px;">(Use Parse to import the shared font data above)</span>
+      </div> -->
+    </div>
+
+    <div id="chars" role="application" aria-label="Glyph editor grids"></div>
+    <button id="addCharBottom" class="tiny">+ Add Character</button>
+  </div>
+
+  <script>
+    /* ---------------- Converter code ---------------- */
+    (async () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      let glyphs = [], fontFace, fontName = 'MyFont', fontSize = 20, extraTop = 0;
+
+      function createCanvasForGlyph(width, height) {
+        canvas.width = width; canvas.height = height;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'black'; ctx.textBaseline = 'top';
+      }
+      function drawGlyph(ch, width, height) {
+        createCanvasForGlyph(width, height);
+        ctx.font = `${fontSize}px "${fontName}"`;
+        ctx.fillText(ch, 0, extraTop);
+        return ctx.getImageData(0, 0, width, height);
+      }
+      function convertToBytes(imageData, width, height) {
+        const arrayHeight = Math.ceil(height / 8);
+        const bytes = [];
+        for (let x = 0; x < width; x++) {
+          for (let yBlock = 0; yBlock < arrayHeight; yBlock++) {
+            let byte = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const y = yBlock * 8 + bit;
+              if (y >= height) continue;
+              const idx = (y * width + x) * 4;
+              if (imageData.data[idx + 3] > 128) byte |= 1 << bit;
+            }
+            bytes.push(byte);
+          }
+        }
+        // trim trailing zeros but keep at least one byte block
+        let lastNonZero = -1;
+        for (let i = 0; i < bytes.length; i++) if (bytes[i] !== 0) lastNonZero = i;
+        if (lastNonZero < 0) lastNonZero = bytes.length - 1;
+        return bytes.slice(0, lastNonZero + 1);
+      }
+      function hex(b) { return '0x' + b.toString(16).padStart(2, '0').toUpperCase(); }
+
+      function renderGlyphs(scale = 3) { // default scale 3x
+        const container = document.getElementById('glyphs');
+        container.innerHTML = '';
+
+        glyphs.forEach(g => {
+          const div = document.createElement('div');
+          div.className = 'glyph';
+
+          const c = document.createElement('canvas');
+          c.width = g.width * scale;   // scale width
+          c.height = g.height * scale; // scale height
+          const cctx = c.getContext('2d');
+
+          // Fill background
+          cctx.fillStyle = 'white';
+          cctx.fillRect(0, 0, c.width, c.height);
+
+          cctx.fillStyle = 'black';
+          for (let x = 0; x < g.width; x++) {
+            for (let y = 0; y < g.height; y++) {
+              const yBlock = Math.floor(y / 8);
+              const bit = y % 8;
+              const idx = x * g.arrayHeight + yBlock;
+              if (g.bytes[idx] & (1 << bit)) {
+                cctx.fillRect(x * scale, y * scale, scale, scale); // scale each pixel
+              }
+            }
+          }
+
+          div.appendChild(c);
+
+          const label = document.createElement('div');
+          label.className = 'glyph-label';
+          label.textContent = `#${g.code} [${String.fromCharCode(g.code)}]`;
+          div.appendChild(label);
+
+          container.appendChild(div);
+        });
+      }
+
+      document.getElementById('loadFont').addEventListener('click', async () => {
+        const fileInput = document.getElementById('fontFile');
+        const urlInput = document.getElementById('fontUrl');
+        let file = fileInput.files[0];
+
+        fontSize = parseInt(document.getElementById('fontSize').value) || 20;
+        extraTop = parseInt(document.getElementById('extraTop').value) || 0;
+
+        try {
+          //If no file, but URL is set → fetch it
+          if (!file && urlInput && urlInput.value.trim()) {
+            const url = urlInput.value.trim();
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Could not fetch font from URL.");
+            const arrayBuffer = await response.arrayBuffer();
+            const fontData = new Uint8Array(arrayBuffer);
+            file = new File([fontData], url.split('/').pop() || "remoteFont.ttf", { type: "font/ttf" });
+
+          }
+
+          // If still no file → fail
+          if (!file) {
+            alert('Please select a font file or enter a font URL');
+            return;
+          }
+          document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000";
+          document.getElementById('glyphs').style.height = "300px";
+
+          //Use file (local or from URL)
+          fontName = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '_');
+          fontFace = new FontFace(fontName, `url(${URL.createObjectURL(file)})`);
+          await fontFace.load();
+          document.fonts.add(fontFace);
+
+          let maxWidth = 0;
+          let maxHeight = fontSize + extraTop;
+          ctx.font = `${fontSize}px "${fontName}"`;
+          for (let code = 32; code < 256; code++) {
+            const w = Math.ceil(ctx.measureText(String.fromCharCode(code)).width);
+            if (w > maxWidth) maxWidth = w;
+          }
+
+          glyphs = [];
+          for (let code = 32; code < 256; code++) {
+            const ch = String.fromCharCode(code);
+            const w = Math.max(1, Math.ceil(ctx.measureText(ch).width));
+            const img = drawGlyph(ch, w, maxHeight);
+            const bytes = convertToBytes(img, w, maxHeight);
+            glyphs.push({
+              code,
+              bytes: bytes.length ? bytes : new Array(Math.ceil(maxHeight / 8) * w).fill(0),
+              width: w,
+              height: maxHeight,
+              arrayHeight: Math.ceil(maxHeight / 8)
+            });
+          }
+
+          renderGlyphs();
+
+          let jumpOffset = 0;
+          let out = `// OLED Font edited from ${file.name}\n`;
+          out += `const char ${fontName}_oled[] PROGMEM = {\n`;
+          out += `\t${hex(maxWidth)}, // Width: ${maxWidth}\n`;
+          out += `\t${hex(maxHeight)}, // Height: ${maxHeight}\n`;
+          out += `\t0x20, // First Char: 32\n`;
+          out += `\t0xE0, // Number of chars: 224\n\n\t// Jump Table:\n`;
+          glyphs.forEach(g => {
+            if (g.bytes.length) {
+              out += `\t${hex((jumpOffset >> 8) & 0xFF)}, ${hex(jumpOffset & 0xFF)}, ${hex(g.bytes.length)}, ${hex(g.width)}, // ${g.code} '${String.fromCharCode(g.code)}'\n`;
+              jumpOffset += g.bytes.length;
+            } else {
+              out += `\t0xFF, 0xFF, 0x00, 0x00, // ${g.code} '${String.fromCharCode(g.code)}' (empty)\n`;
+            }
+          });
+          out += '\n\t// Font Data:\n';
+          glyphs.forEach(g => {
+            if (g.bytes.length) {
+              out += '\t' + g.bytes.map(b => hex(b)).join(',') + `, // ${g.code} '${String.fromCharCode(g.code)}'\n`;
+            }
+          });
+          out += '};\n';
+          document.getElementById('output').value = out;
+
+        } catch (err) {
+          console.error(err);
+          alert("Error loading font: " + err.message);
+        }
+      });
+
+      document.getElementById('downloadH').addEventListener('click', () => {
+        const data = document.getElementById('output').value;
+        if (!data.trim()) { alert('Nothing to save.'); return; }
+        const blob = new Blob([data], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${fontName}_oled.h`;
+        a.click();
+      });
+
+      document.getElementById('copyClipboard').addEventListener('click', () => {
+        const out = document.getElementById('output');
+        out.select();
+        document.execCommand('copy');
+        alert('Font array copied to clipboard!');
+      });
+    })();
+
+    /* ---------------- Glyph editor (parser + grid) ---------------- */
+    (function () {
+      let editorFont = null, isMouseDown = false, paintState = null;
+
+      function prs(token) {
+        token = (token || '').trim();
+        if (!token.length) return NaN;
+        if (/^0x/i.test(token)) return parseInt(token, 16);
+        if (/^[Bb][01]+$/.test(token)) return parseInt(token.slice(1), 2);
+        return parseInt(token, 10);
+      }
+
+      class FontEditor {
+        constructor() {
+          this.height = parseInt(document.getElementById('height').value) || 8;
+          this.width = parseInt(document.getElementById('width').value) || 8;
+          this.currentCharCode = parseInt(document.getElementById('code').value) || 32;
+          this.fontContainer = document.getElementById('chars');
+          this.bytesForHeight = Math.ceil(this.height / 8);
+          this.fontContainer.innerHTML = '';
+          document.body.classList.add('started');
+        }
+
+        static updateCaption(captionEl, code) { captionEl.textContent = `#${code} [${String.fromCharCode(code)}]`; }
+
+        addChar(jumpData, charData) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'char-item';
+          const tbl = document.createElement('table');
+          const caption = tbl.appendChild(document.createElement('caption'));
+          FontEditor.updateCaption(caption, this.currentCharCode);
+
+          const header = tbl.appendChild(document.createElement('tr'));
+          header.innerHTML =
+            '<th action="delete">&cross;</th>' +
+            '<th action="add">+</th>' +
+            '<th action="tight">)</th>' +
+            '<th action="left">&larr;</th>' +
+            '<th action="down">&darr;</th>' +
+            '<th action="up">&uarr;</th>' +
+            '<th action="right">&rarr;</th>' +
+            '<th action="release">(</th>' +
+            '<th action="copy">I</th>' +
+            '<th action="clean">C</th>';
+
+          wrapper.jumpData = jumpData || [0, 0, 0, this.width]; // store xAdvance info
+
+          let pixelInit = [];
+          if (Array.isArray(charData) && charData.length) {
+            const colBytes = charData.slice();
+            const missing = colBytes.length % this.bytesForHeight;
+            for (let i = 0; i < missing; i++) colBytes.push(0);
+            while (colBytes.length) {
+              const rowBytes = colBytes.splice(0, this.bytesForHeight).reverse();
+              const pixelRow = [];
+              for (let b = 0; b < rowBytes.length; b++) {
+                let mask = 0x80;
+                let byte = rowBytes[b];
+                for (let bit = 0; bit < 8; bit++) {
+                  pixelRow.push((byte & mask) ? 1 : 0);
+                  mask >>= 1;
+                }
+              }
+              pixelRow.splice(0, pixelRow.length - this.height);
+              pixelInit.push(pixelRow.reverse());
+            }
+          }
+
+          for (let r = 0; r < this.height; r++) {
+            const row = tbl.appendChild(document.createElement('tr'));
+            for (let c = 0; c < this.width; c++) {
+              const td = row.appendChild(document.createElement('td'));
+              td.setAttribute('action', 'toggle');
+              if (pixelInit.length && pixelInit[c] && pixelInit[c][r]) td.className = 'on';
+              if (Array.isArray(jumpData) && jumpData.length >= 4) {
+                if (c >= jumpData[3]) td.classList.add('out');
+              }
+            }
+          }
+
+          wrapper.appendChild(tbl);
+          this.fontContainer.appendChild(wrapper);
+          this.currentCharCode++;
+          return wrapper;
+        }
+
+        static togglePixel(cell) { if (!cell || cell.classList.contains('out')) return; cell.classList.toggle('on'); }
+
+
+      }
+
+      FontEditor.prototype.generate = function () {
+        const outputEl = document.getElementById('output');
+        const chars = this.fontContainer.getElementsByTagName('table');
+        const firstCharCode = parseInt(document.getElementById('code').value);
+        const name = document.getElementById('name').value.replace(/[^a-zA-Z0-9_$]/g, '_');
+
+        const bits2add = this.bytesForHeight * 8 - this.height;
+        let charAddr = 0;
+
+        const jumpLines = [];
+        const dataLines = [];
+
+        const width = parseInt(document.getElementById('width')?.value, 10) || this.width;
+
+        for (let ch = 0; ch < chars.length; ch++) {
+          const table = chars[ch];
+          const rows = table.getElementsByTagName('tr');
+
+          // Always read the current xAdvance from table.jumpData[3]
+          const jumpData = table.jumpData || table.parentNode?.jumpData || [0, 0, 0, this.width];
+          const xAdvance = jumpData[3] ?? this.width;
+
+          let charBytes = [];
+          let notZero = false;
+
+          for (let col = 0; col < xAdvance; col++) {
+            let bits = "";
+            for (let r = rows.length - 1; r >= 1; r--) { // skip header row
+              const cell = rows[r].children[col];
+              if (!cell) continue;
+              bits += cell.classList.contains('on') ? '1' : '0';
+            }
+
+            // pad to full byte blocks
+            for (let b = 0; b < bits2add; b++) bits = '0' + bits;
+
+            for (let b = bits.length - 1; b >= 7; b -= 8) {
+              const byteStr = bits.substr(b - 7, 8);
+              const byte = parseInt(byteStr, 2);
+              if (byte !== 0) notZero = true;
+              charBytes.push(byte);
+            }
+          }
+
+          // remove trailing zeros
+          while (charBytes.length > 1 && charBytes[charBytes.length - 1] === 0) charBytes.pop();
+
+          const charCode = ch + firstCharCode;
+
+          if (notZero) {
+            // Font data line
+            dataLines.push(
+              `\t${charBytes.map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase()).join(', ')}, // ${charCode} '${String.fromCharCode(charCode)}'`
+            );
+
+            // Jump table line
+            jumpLines.push(
+              `\t0x${((charAddr >> 8) & 0xFF).toString(16).padStart(2, '0').toUpperCase()}, ` +
+              `0x${(charAddr & 0xFF).toString(16).padStart(2, '0').toUpperCase()}, ` +
+              `0x${charBytes.length.toString(16).padStart(2, '0').toUpperCase()}, ` +
+              `0x${xAdvance.toString(16).padStart(2, '0').toUpperCase()}, // ${charCode} '${String.fromCharCode(charCode)}'`
+            );
+
+            charAddr += charBytes.length;
+          } else {
+            // empty glyph
+            jumpLines.push(
+              `\t0xFF, 0xFF, 0x00, 0x${xAdvance.toString(16).padStart(2, '0').toUpperCase()}, // ${charCode} '${String.fromCharCode(charCode)}'`
+            );
+          }
+        }
+
+        outputEl.value = `// OLED Font edited by Glyph Editor
+const char ${name}[] PROGMEM = {
+\t0x${width.toString(16).padStart(2, '0').toUpperCase()}, // Width: ${width}
+\t0x${this.height.toString(16).padStart(2, '0').toUpperCase()}, // Height: ${this.height}
+\t0x${firstCharCode.toString(16).padStart(2, '0').toUpperCase()}, // First Char: ${firstCharCode}
+\t0x${chars.length.toString(16).padStart(2, '0').toUpperCase()}, // Number of chars
+
+\t// Jump Table:
+${jumpLines.join('\n')}
+
+\t// Font Data:
+${dataLines.join('\n')}
+};`;
+
+        // Re-render preview with updated xAdvance
+        this.renderGlyphs(2);
+      };
+
+      FontEditor.prototype.toGlyphs = function () {
+        const glyphs = [];
+        const tables = this.fontContainer.getElementsByTagName('table');
+
+        for (let i = 0; i < tables.length; i++) {
+          const tbl = tables[i];
+          const rows = tbl.getElementsByTagName('tr');
+          const bytes = [];
+
+          for (let col = 0; col < this.width; col++) {
+            let colBits = 0;
+            let bitIdx = 0;
+
+            // Start at row 1 to skip the header
+            for (let row = 1; row <= this.height; row++) {
+              const cell = rows[row]?.children[col];
+              if (cell?.classList.contains('on')) {
+                colBits |= (1 << bitIdx);
+              }
+              bitIdx++;
+              if (bitIdx === 8) {
+                bytes.push(colBits);
+                colBits = 0;
+                bitIdx = 0;
+              }
+            }
+            if (bitIdx > 0) bytes.push(colBits); // remaining bits
+          }
+
+          glyphs.push({
+            code: i + parseInt(document.getElementById('code').value),
+            width: this.width,
+            height: this.height,
+            arrayHeight: this.bytesForHeight,
+            bytes: bytes
+          });
+        }
+        return glyphs;
+      };
+
+      FontEditor.prototype.renderGlyphs = function (scale = 3) {
+        const container = document.getElementById('glyphs');
+        container.innerHTML = '';
+        const glyphs = this.toGlyphs(); // uses the editor grid
+
+        glyphs.forEach((g, i) => {
+          const div = document.createElement('div');
+          div.className = 'glyph';
+
+          // Use xAdvance if available
+          let xAdvance = this.width;
+          const tbl = this.fontContainer.children[i];
+          if (tbl?.jumpData?.length >= 4) xAdvance = tbl.jumpData[3];
+
+          const c = document.createElement('canvas');
+          c.width = xAdvance * scale;
+          c.height = g.height * scale;
+          const ctx = c.getContext('2d');
+
+          // Draw background
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, c.width, c.height);
+
+          // Draw pixels
+          ctx.fillStyle = 'black';
+          for (let x = 0; x < xAdvance; x++) {
+            for (let y = 0; y < g.height; y++) {
+              const yBlock = Math.floor(y / 8);
+              const bit = y % 8;
+              const idx = x * g.arrayHeight + yBlock;
+              if (g.bytes[idx] & (1 << bit)) {
+                ctx.fillRect(x * scale, y * scale, scale, scale);
+              }
+            }
+          }
+
+          div.appendChild(c);
+          const label = document.createElement('div');
+          label.className = 'glyph-label';
+          label.textContent = `#${g.code} [${String.fromCharCode(g.code)}]`;
+          div.appendChild(label);
+
+          container.appendChild(div);
+        });
+      };
+
+      // parse button event
+      document.getElementById('parse').addEventListener('click', function () {
+        parseFont(true);
+      });
+
+      function parseFont(bPressed = false) {
+        const txt = document.getElementById('output').value || '';
+        if (!txt.trim()) { alert('Shared output is empty'); return; }
+        const cleaned = txt.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1').trim();
+        const nameMatch = cleaned.match(/const\s+char\s+([A-Za-z0-9_\-]+)\s*\[\]\s*PROGMEM\s*=/);
+        const fontArrayName = nameMatch ? nameMatch[1] : '';
+        document.getElementById('name').value = fontArrayName;
+        const inside = (cleaned.split('{').slice(1).join('{') || '').split('}')[0];
+        if (!inside) { alert('Could not find array data'); return; }
+        const tokens = inside.split(',').map(s => s.trim()).filter(s => s.length);
+        if (tokens.length < 4) { alert('Not enough data'); return; }
+        const width = prs(tokens[0]), height = prs(tokens[1]), firstCharCode = prs(tokens[2]), numberOfChars = prs(tokens[3]);
+        if (isNaN(width) || isNaN(height) || isNaN(firstCharCode) || isNaN(numberOfChars)) { alert('Header parse failed'); return; }
+
+        let jc = 4, dc = 4 + 4 * numberOfChars, jumpTable = [], charData = [];
+        for (let c = 0; c < numberOfChars; c++) {
+          const je = [];
+          for (let j = 0; j < 4; j++) je.push(prs(tokens[jc++]));
+          jumpTable.push(je);
+          if (!(je[0] === 255 && je[1] === 255)) {
+            for (let k = 0; k < je[2]; k++) charData.push(prs(tokens[dc++]));
+          }
+        }
+
+        document.getElementById('width').value = width;
+        document.getElementById('height').value = height;
+        document.getElementById('code').value = firstCharCode;
+
+        editorFont = new FontEditor();
+        let cdPtr = 0;
+        for (let i = 0; i < jumpTable.length; i++) {
+          const je = jumpTable[i];
+          let chBytes = [];
+          if (!(je[0] === 255 && je[1] === 255) && je[2] > 0) {
+            chBytes = charData.slice(cdPtr, cdPtr + je[2]);
+            cdPtr += je[2];
+          }
+          editorFont.addChar(je, chBytes);
+        }
+        editorFont.renderGlyphs(3); // 2x scale
+        if (bPressed) srollToEditor();
+      }
+
+      document.getElementById('create').addEventListener('click', () => {
+        if (!confirm("Do you really want to create a new font? This will clear the current editor.")) {
+          return; // cancelled
+        }
+
+        // Ask user for height
+        const inputHeight = prompt("Enter font height (1–128 pixels):", "20");
+        if (inputHeight === null) return; // cancelled
+
+        const h = parseInt(inputHeight, 10);
+        if (isNaN(h) || h < 1 || h > 128) {
+          alert("Invalid height! Please enter a value between 1 and 128.");
+          return;
+        }
+
+        const w = parseInt(document.getElementById('width').value) || 8;
+        const code = parseInt(document.getElementById('code').value) || 32;
+
+        document.getElementById('width').value = w;
+        document.getElementById('height').value = h;
+        document.getElementById('name').value = 'My_Font';
+        document.getElementById('output').value = '';
+
+        editorFont = new FontEditor();
+        editorFont.addChar();
+        document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000";
+        document.getElementById('glyphs').style.height = "300px";
+        srollToEditor();
+        generateF();
+      });
+
+      //document.getElementById('generate').addEventListener('click', () => {
+      //  generateF();
+      //});
+
+      function generateF() {
+        if (!editorFont) { alert('No font in editor'); return; }
+        editorFont.generate();
+
+        // update preview using new function
+        parseFont();
+      }
+
+      document.getElementById('addCharBottom').addEventListener('click', () => { if (editorFont) editorFont.addChar(); });
+      document.getElementById('width').addEventListener('input', function () {
+        waitforGernateF();
+
+      });
+
+      function srollToEditor() {
+        document.getElementById('editorSection').style.display = 'block';
+        document.getElementById('output').scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'  // or "center", "end", "nearest"
+        });
+      }
+
+
+      /* ---------------- Interaction: click, hold & drag, actions ---------------- */
+
+      // pointerdown handles both toggling pixels and action buttons
+      document.getElementById('chars').addEventListener('pointerdown', function (e) {
+        if (e.button !== 0) return; // left button only
+
+        const target = e.target.closest('td[action="toggle"], th[action]');
+        if (!target) return;
+
+        const action = target.getAttribute('action') || '';
+
+        if (action && action !== 'toggle') {
+          const th = target;
+          const table = th.closest('table');
+          const wrapper = table.closest('.char-item');
+          const pixels = table.getElementsByTagName('td');
+          switch (action) {
+            case 'add': {
+              const code = wrapper.querySelector('caption')?.textContent?.match(/\d+/)?.[0] || document.getElementById('code').value;
+              const newItem = editorFont.addChar();
+              wrapper.parentNode.insertBefore(newItem, wrapper);
+              let codeVal = parseInt(code);
+              let cur = newItem;
+              while (cur) {
+                const cap = cur.querySelector('caption');
+                if (cap) FontEditor.updateCaption(cap, codeVal);
+                codeVal++;
+                cur = cur.nextSibling;
+              }
+              waitforGernateF();
+            } break;
+            case 'delete': {
+              if (confirm('Delete this character ?')) {
+                const code = parseInt(wrapper.querySelector('caption').textContent.match(/\d+/)[0]);
+                let cur = wrapper.nextSibling;
+                let c = code;
+                while (cur) {
+                  const cap = cur.querySelector('caption');
+                  if (cap) FontEditor.updateCaption(cap, c);
+                  c++;
+                  cur = cur.nextSibling;
+                }
+                wrapper.remove();
+              }
+              waitforGernateF();
+            } break;
+            case 'left': {
+              for (let p = 0; p < pixels.length; p++) {
+                if ((p + 1) % editorFont.width) {
+                  pixels[p].className = pixels[p + 1].className;
+                } else pixels[p].className = 'out';
+              }
+              waitforGernateF();
+            } break;
+            case 'right': {
+              for (let p = pixels.length - 1; p >= 0; p--) {
+                if (p % editorFont.width) {
+                  pixels[p].className = pixels[p - 1].className;
+                } else pixels[p].className = '';
+              }
+              waitforGernateF();
+            } break;
+            case 'up': {
+              for (let p = 0; p < pixels.length; p++) {
+                if (p < editorFont.width * (editorFont.height - 1)) {
+                  pixels[p].className = pixels[p + editorFont.width].className;
+                } else {
+                  pixels[p].className = pixels[p].classList.contains('out') ? 'out' : '';
+                }
+              }
+              waitforGernateF();
+            } break;
+            case 'down': {
+              for (let p = pixels.length - 1; p >= 0; p--) {
+                if (p >= editorFont.width) {
+                  pixels[p].className = pixels[p - editorFont.width].className;
+                } else {
+                  pixels[p].className = pixels[p].classList.contains('out') ? 'out' : '';
+                }
+              }
+              waitforGernateF();
+            } break;
+            case 'tight':
+            case 'release':
+              if (action === 'tight') {
+                for (let p = 0; p < pixels.length; p++) {
+                  if ((p + 1) % editorFont.width) {
+                    if (pixels[p + 1].classList.contains('out')) pixels[p].classList.add('out');
+                  } else pixels[p].classList.add('out');
+                }
+              } else {
+                for (let p = pixels.length - 1; p >= 0; p--) {
+                  if ((p % editorFont.width) && pixels[p].classList.contains('out') && !pixels[p - 1].classList.contains('out')) {
+                    pixels[p].className = '';
+                  }
+                }
+              }
+              // recalc xAdvance after tight/release
+              if (!table.jumpData) table.jumpData = [0, 0, 0, editorFont.width];
+              let xAdv = 0;
+              for (let col = 0; col < editorFont.width; col++) {
+                for (let row = 0; row < editorFont.height; row++) {
+                  const cell = pixels[row * editorFont.width + col];
+                  if (cell && !cell.classList.contains('out')) xAdv = col + 1;
+                }
+              }
+              table.jumpData[3] = xAdv;
+              waitforGernateF();
+              break;
+            case 'clean':
+              if (confirm('Delete the pixels ?')) {
+                for (let p = 0; p < pixels.length; p++) pixels[p].className = '';
+              }
+              table.jumpData[3] = editorFont.width; // reset xAdvance
+              waitforGernateF();
+              break;
+            case 'copy': {
+              const charNumber = parseInt(prompt('Source char #:'));
+              if (isNaN(charNumber)) break;
+              const tables = Array.from(document.querySelectorAll('#chars .char-item table'));
+              const offset = charNumber - parseInt(document.getElementById('code').value || 0);
+              if (offset < 0 || offset >= tables.length) { alert('Invalid source char'); break; }
+              const src = tables[offset].getElementsByTagName('td');
+              const dst = table.getElementsByTagName('td');
+              for (let i = 0; i < dst.length && i < src.length; i++) {
+                if (dst[i].parentNode.localName === 'th') continue;
+                dst[i].className = src[i].className;
+              }
+              table.jumpData[3] = xAdv; // recalc after copy if needed
+              waitforGernateF();
+            } break;
+
+
+          }
+
+          // update the glyph preview immediately
+          editorFont.renderGlyphs(2);
+
+          return;
+        }
+
+        // ------------------- PAINTING -------------------
+        if (action === 'toggle') {
+          const cell = e.target;
+          if (cell.getAttribute('action') === 'toggle') {
+            paintState = !cell.classList.contains('on');
+            if (!cell.classList.contains('out')) cell.classList.toggle('on', paintState);
+            isMouseDown = true;
+          }
+        }
+      });
+
+
+      document.getElementById('chars').addEventListener('pointerover', e => {
+        if (!isMouseDown) return;
+        const cell = e.target; if (cell.getAttribute('action') === 'toggle') {
+          if (!cell.classList.contains('out')) cell.classList.toggle('on', paintState);
+        }
+      });
+      document.addEventListener('pointerup', () => { isMouseDown = false; paintState = null; isPaint(event); });
+      function isPaint(event) {
+        // check if the event target is a paintable cell
+        const isPaintable = event.target.tagName === 'TD' &&
+          event.target.closest('.char-item'); // make sure it belongs to a glyph
+
+        if (!isPaintable) {
+          console.log('Clicked outside paintable area, generation skipped.');
+          return;
+        }
+        waitforGernateF();
+      }
+      function waitforGernateF() {
+        // Hier startet / verzögert der Timer
+        if (generateTimer) clearTimeout(generateTimer);
+
+        // setze den Timer auf 1 Sekunde
+        generateTimer = setTimeout(() => {
+          generateF();
+          generateTimer = null; // aufräumen
+        }, 1000);
+      }
+      let generateTimer = null;
+    })();
+
+  </script>
+
+</body>
+
+</html>
