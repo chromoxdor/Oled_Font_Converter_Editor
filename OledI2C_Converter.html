@@ -59,7 +59,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       top: 0;
       z-index: 100;
       background: #97d3ef;
-      /*border-bottom: 1px solid #ccc;*/
+      border-bottom: 5px solid #97d3ef;
       padding: 6px;
       display: flex;
       flex-wrap: wrap;
@@ -251,6 +251,12 @@ Copyright (c) 2016 by Fabrice Weinberg
       box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
       text-align: center;
     }
+
+    #live{
+      border-radius: 0 0 5px 5px;
+      background: #97d3ef;
+
+    }
   </style>
 </head>
 
@@ -297,7 +303,7 @@ Copyright (c) 2016 by Fabrice Weinberg
     <div style="display: flex; gap: 5px; align-items: flex-start;">
       <button id="parse" class="tiny">Edit Font</button>
       <button id="generate" class="tiny">Update Font</button>
-      <label class="tiny">
+      <label id= live class="tiny">
         <input type="checkbox" id="liveUpdate">
         Live update (best for small fonts <= 20px)
       </label>
@@ -347,10 +353,6 @@ Copyright (c) 2016 by Fabrice Weinberg
             <tr>
               <td>✗</td>
               <td>Delete this char</td>
-            </tr>
-            <tr>
-              <td>+</td>
-              <td>Add new char above</td>
             </tr>
             <tr>
               <td>←↓↑→</td>
@@ -637,7 +639,7 @@ Copyright (c) 2016 by Fabrice Weinberg
           const header = tbl.appendChild(document.createElement('tr'));
           header.innerHTML =
             '<th action="delete">&cross;</th>' +
-            '<th action="add">+</th>' +
+            //'<th action="add">+</th>' +
             '<th action="tight">)</th>' +
             '<th action="left">&larr;</th>' +
             '<th action="down">&darr;</th>' +
@@ -1027,7 +1029,7 @@ ${dataLines.join('\n')}
           const wrapper = table.closest('.char-item');
           const pixels = table.getElementsByTagName('td');
           switch (action) {
-            case 'add': {
+            /*case 'add': {
               const code = wrapper.querySelector('caption')?.textContent?.match(/\d+/)?.[0] || document.getElementById('code').value;
               const newItem = editorFont.addChar();
               wrapper.parentNode.insertBefore(newItem, wrapper);
@@ -1040,7 +1042,7 @@ ${dataLines.join('\n')}
                 cur = cur.nextSibling;
               }
               waitforGenerateF();
-            } break;
+            } break;*/
             case 'delete': {
               if (confirm('Delete this character ?')) {
                 // Clear all pixels
