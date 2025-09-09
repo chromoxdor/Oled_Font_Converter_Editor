@@ -267,7 +267,7 @@ Copyright (c) 2016 by Fabrice Weinberg
     </div>
   </div>
   <h2>OLED Font Converter</h2>
-  <div id="controls" style="display:flex; justify-content: flex-start; align-items: center; gap: 100px;">
+  <div id="controls" style="display:flex; justify-content: flex-start; align-items: center;">
     <div>
       <label style="font-weight:600; display:block; margin-bottom:4px;">Font file (TTF/OTF):</label>
       <input type="file" id="fontFile" accept=".ttf,.otf">
@@ -285,15 +285,16 @@ Copyright (c) 2016 by Fabrice Weinberg
     <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
     <input type="number" id="extraTop" class="editable" value="0" min="0" max="200" style="width:100%;" step="1">
 
-    <label for="threshold" style="text-align:left;">Threshold (0–255):</label>
-    <input type="number" id="threshold" class="editable" value="128" min="0" max="255" style="width:100%;" step="1">
-  </div>
+    <label for="boldness">Boldness:</label>
+    <div></div>
+    <input type="range" id="boldness" min="0" max="255" value="128" style="width:100%;" step="1">
+    <span id="boldnessValue">128</span></div>
 
-  <div
-    style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
-    <button id="loadFont" class="tiny">Load & Convert</button>
-    <button id="create" class="tiny">Create New</button>
-  </div>
+    <div
+      style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
+      <button id="loadFont" class="tiny">Load & Convert</button>
+      <button id="create" class="tiny">Create New</button>
+    </div>
   </div>
 
   <div id="glyphs" aria-label="Glyph previews"></div>
@@ -439,9 +440,11 @@ Copyright (c) 2016 by Fabrice Weinberg
       }
 
       // now takes a threshold parameter
-      function convertToBytes(imageData, width, height, threshold = 128) {
+      function convertToBytes(imageData, width, height) {
+        const boldness = parseInt(document.getElementById('boldness').value, 10) || 128; // renamed + inverted
         const arrayHeight = Math.ceil(height / 8);
         const bytes = [];
+
         for (let x = 0; x < width; x++) {
           for (let yBlock = 0; yBlock < arrayHeight; yBlock++) {
             let byte = 0;
@@ -449,17 +452,18 @@ Copyright (c) 2016 by Fabrice Weinberg
               const y = yBlock * 8 + bit;
               if (y >= height) continue;
               const idx = (y * width + x) * 4;
+              const a = imageData.data[idx + 3]; // alpha channel
 
-              const a = imageData.data[idx + 3]; // alpha channel only
-
-              if (a >= threshold) {
+              // invert logic: higher boldness = keep more pixels
+              if (a >= (255 - boldness)) {
                 byte |= 1 << bit;
               }
             }
             bytes.push(byte);
           }
         }
-        // trim trailing zeros but keep at least one byte block
+
+        // trim trailing zeros but keep at least one block
         let lastNonZero = -1;
         for (let i = 0; i < bytes.length; i++) if (bytes[i] !== 0) lastNonZero = i;
         if (lastNonZero < 0) lastNonZero = bytes.length - 1;
@@ -507,6 +511,19 @@ Copyright (c) 2016 by Fabrice Weinberg
           container.appendChild(div);
         });
       }
+      const boldnessSlider = document.getElementById('boldness');
+      const boldnessValue = document.getElementById('boldnessValue');
+      const loadFontBtn = document.getElementById('loadFont');
+
+      // update text next to slider + trigger regenerate
+      boldnessSlider.addEventListener('input', () => {
+        boldnessValue.textContent = boldnessSlider.value;
+
+        // only auto-reload if a font is already loaded
+        if (glyphs.length > 0) {
+          loadFontBtn.click();
+        }
+      });
 
       document.getElementById('loadFont').addEventListener('click', async () => {
         const fileInput = document.getElementById('fontFile');
@@ -515,7 +532,6 @@ Copyright (c) 2016 by Fabrice Weinberg
 
         fontSize = parseInt(document.getElementById('fontSize').value) || 20;
         extraTop = parseInt(document.getElementById('extraTop').value) || 0;
-        pixelThreshold = parseInt(document.getElementById('threshold').value) || 128;
 
         try {
           //If no file, but URL is set → fetch it
