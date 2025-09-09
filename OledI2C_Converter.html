@@ -69,6 +69,13 @@ Copyright (c) 2016 by Fabrice Weinberg
       resize: vertical;
     }
 
+    #fButtons {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
     #outputContainer,
     #editorSection {
       margin-top: 320px;
@@ -207,20 +214,46 @@ Copyright (c) 2016 by Fabrice Weinberg
       padding: 6px 8px;
     }
 
-    #generate {
-      display: none;
-    }
-
     .editable::-webkit-inner-spin-button,
     .editable::-webkit-outer-spin-button {
       opacity: 1;
     }
 
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.7);
+      /* semi-transparent white */
+      z-index: 9999;
+      /* on top of everything */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #overlayContent {
+      border: 2px solid red;
+      color: red;
+      padding: 20px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
   </style>
 </head>
 
 <body>
-
+  <div id="overlay" style="display:none;">
+    <div id="overlayContent">
+      Generating / updating font output. Please wait...
+    </div>
+  </div>
   <h2>OLED Font Converter</h2>
   <div id="controls" style="display:flex; justify-content: flex-start; align-items: center; gap: 100px;">
     <div>
@@ -254,8 +287,15 @@ Copyright (c) 2016 by Fabrice Weinberg
     <textarea id="output"
       placeholder="// Font output will appear here or past your font data here and press edit"></textarea>
   </div>
-  <div style="display:flex;gap:6px; justify-content: space-between;">
-    <button id="parse" class="tiny">Edit Font</button>
+  <div id="fButtons" style="display:flex;gap:6px; justify-content: space-between;">
+    <div style="display: flex; gap: 5px; align-items: flex-start;">
+      <button id="parse" class="tiny">Edit Font</button>
+      <button id="generate" class="tiny">Update Font</button>
+      <label class="tiny">
+        <input type="checkbox" id="liveUpdate">
+        Live update
+      </label>
+    </div>
     <div>
       <button id="downloadH" class="tiny">Save to File</button>
       <button id="copyClipboard" class="tiny">Copy to Clipboard</button>
@@ -345,6 +385,30 @@ Copyright (c) 2016 by Fabrice Weinberg
   </div>
 
   <script>
+    function adjustFButtonsPosition() {
+      const glyphs = document.getElementById('glyphs');
+      const fButtons = document.getElementById('fButtons');
+
+      // get the bottom position of glyphs relative to the page
+      const glyphsRect = glyphs.getBoundingClientRect();
+      // Set the top of fButtons right below glyphs
+      fButtons.style.top = glyphsRect.bottom + 'px';
+    }
+
+    // Call it when glyphs is resized (using ResizeObserver)
+    const glyphs = document.getElementById('glyphs');
+    const resizeObserver = new ResizeObserver(() => {
+      adjustFButtonsPosition();
+    });
+    resizeObserver.observe(glyphs);
+
+    // Also adjust on window scroll / resize
+    window.addEventListener('resize', adjustFButtonsPosition);
+    window.addEventListener('scroll', adjustFButtonsPosition);
+
+
+
+
     /* ---------------- Converter code ---------------- */
     (async () => {
       const canvas = document.createElement('canvas');
@@ -711,6 +775,7 @@ ${dataLines.join('\n')}
 
         // Re-render preview with updated xAdvance
         this.renderGlyphs(2);
+
       };
 
       FontEditor.prototype.toGlyphs = function () {
@@ -801,10 +866,14 @@ ${dataLines.join('\n')}
 
       // parse button event
       document.getElementById('parse').addEventListener('click', function () {
-        parseFont(true);
+        pendingGeneration();
+        setTimeout(() => {
+          parseFont(true);
+        }, 50); // 50ms is enough for repaint
       });
 
       function parseFont(bPressed = false) {
+
         const txt = document.getElementById('output').value || '';
         if (!txt.trim()) { alert('Shared output is empty'); return; }
         const cleaned = txt.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1').trim();
@@ -844,7 +913,11 @@ ${dataLines.join('\n')}
           editorFont.addChar(je, chBytes);
         }
         editorFont.renderGlyphs(3); // 2x scale
-        if (bPressed) srollToEditor();
+        if (bPressed) {
+          srollToEditor();
+          hideOverlay();
+        }
+
       }
 
       document.getElementById('create').addEventListener('click', () => {
@@ -876,17 +949,38 @@ ${dataLines.join('\n')}
         generateF();
       });
 
-      //document.getElementById('generate').addEventListener('click', () => {
-      //  generateF();
-      //});
+      document.getElementById('generate').addEventListener('click', () => {
+        generateF();
+      });
 
       function generateF() {
-        if (!editorFont) { alert('No font in editor'); return; }
-        editorFont.generate();
+        if (!editorFont) {
+          alert('No font in editor');
+          return;
+        }
+        console.log('Generate font from editor');
 
-        // update preview using new function
-        parseFont();
+        // Show overlay first
+        pendingGeneration();
+
+        // Give browser a moment to render overlay
+        setTimeout(() => {
+          editorFont.generate(); // heavy generation
+          parseFont();           // update preview
+          hideOverlay();         // hide overlay after done
+        }, 50); // 50ms is enough for repaint
       }
+
+      function pendingGeneration() {
+        const overlay = document.getElementById('overlay');
+        overlay.style.display = 'flex';
+      }
+
+      function hideOverlay() {
+        const overlay = document.getElementById('overlay');
+        overlay.style.display = 'none';
+      }
+
 
       document.getElementById('addCharBottom').addEventListener('click', () => { if (editorFont) editorFont.addChar(); });
       document.getElementById('width').addEventListener('input', function () {
@@ -1078,16 +1172,19 @@ ${dataLines.join('\n')}
         waitforGenerateF();
       }
       function waitforGenerateF() {
-        // Hier startet / verzögert der Timer
-        if (generateTimer) clearTimeout(generateTimer);
+        if (document.getElementById('liveUpdate').checked) {
+          if (generateTimer) clearTimeout(generateTimer);
 
-        // setze den Timer auf 1 Sekunde
-        generateTimer = setTimeout(() => {
-          generateF();
-          generateTimer = null; // aufräumen
-        }, 1000);
+          // setze den Timer auf 1 Sekunde
+          generateTimer = setTimeout(() => {
+            generateF();
+            generateTimer = null; // aufräumen
+          }, 1000);
+        }
       }
+
       let generateTimer = null;
+
     })();
 
   </script>
