@@ -252,151 +252,186 @@ Copyright (c) 2016 by Fabrice Weinberg
       text-align: center;
     }
 
+    #overlayWarning {
+      position: sticky;
+      top: 0;
+      max-height: 100vh;
+      overflow: auto;
+      align-items: center;
+      border: 2px solid red;
+      color: red;
+      padding: 5px 10px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    #warningWrap {
+      transition: .4s;
+      width: 0;
+    }
+
     #live {
       border-radius: 0 0 5px 5px;
       background: #97d3ef;
 
     }
+
+    body {
+      display: flex;
+      margin: 0;
+    }
   </style>
 </head>
 
 <body>
-  <div id="overlay" style="display:none;">
-    <div id="overlayContent">
-      Generating / updating font output. Please wait...
-    </div>
-  </div>
-  <h2>OLED Font Converter</h2>
-  <div id="controls" style="display:flex; justify-content: flex-start; align-items: center;">
-    <div>
-      <label style="font-weight:600; display:block; margin-bottom:4px;">Font file (TTF/OTF):</label>
-      <input type="file" id="fontFile" accept=".ttf,.otf">
-    </div>
-    <div>
-      <label style="font-weight:600; display:block; margin-bottom:4px;">Font URL:</label>
-      <input type="url" id="fontUrl" placeholder="https://example.com/font.ttf" style="width:100%; padding:4px;">
-    </div>
-  </div>
-
-  <div style="display:grid; grid-template-columns: 1fr 40px; gap:8px 2px; width: 180px; align-items:center;">
-    <label for="fontSize" style="text-align:left;">Font size (px):</label>
-    <input type="number" id="fontSize" class="editable" value="20" min="2" max="200" style="width:100%;" step="1">
-
-    <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
-    <input type="number" id="extraTop" class="editable" value="0" min="0" max="200" style="width:100%;" step="1">
-
-    <label for="boldness">Boldness:</label>
-    <div><button id="resetBoldness" type="button">Reset</button></div>
-    <input type="range" id="boldness" min="1" max="254" value="128" style="width:100%;" step="1">
-    <span id="boldnessValue">128</span>
-  </div>
-
-  <div
-    style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
-    <button id="loadFont" class="tiny">Load & Convert</button>
-    <button id="create" class="tiny">Create New</button>
-  </div>
-  </div>
-
-  <div id="glyphs" aria-label="Glyph previews"></div>
-
-  <div id="outputContainer">
-    <textarea id="output"
-      placeholder="// Font output will appear here or past your font data here and press edit"></textarea>
-  </div>
-  <div id="fButtons" style="display:flex;gap:6px; justify-content: space-between;">
-    <div style="display: flex; gap: 5px; align-items: flex-start;">
-      <button id="parse" class="tiny">Edit Font</button>
-      <button id="generate" class="tiny">Update Font (q)</button>
-      <label id=live class="tiny">
-        <input type="checkbox" id="liveUpdate">
-        Live update (best for small fonts <= 20px) </label>
-    </div>
-    <div>
-      <button id="downloadH" class="tiny">Save to File</button>
-      <button id="copyClipboard" class="tiny">Copy to Clipboard</button>
-    </div>
-  </div>
-
-  <!-- Editor -->
-  <div id="editorSection">
-    <h3>Glyph Editor</h3>
-    <div id="editorForm">
-      <div style="display: flex;justify-content: flex-start;">
-        <div>
-          <table>
-            <tr>
-              <td style="width:160px">Font array name:</td>
-              <td><input type="text" id="name" placeholder="My_Font" style="width:160px"></td>
-              <td rowspan="4" style="width:48%"><!-- shared textarea is above; editor uses it --></td>
-            </tr>
-            <tr>
-              <td>First char code:</td>
-              <td><input type="number" id="code" value="32" style="width:160px"></td>
-            </tr>
-            <tr>
-              <td>Width (adjustable):</td>
-              <td><input type="number" id="width" class="editable" value="" style="width:160px" step="1"></td>
-            </tr>
-            <tr>
-              <td>Height:</td>
-              <td><input type="number" id="height" value="" style="width:160px" max="64" readonly></td>
-            </tr>
-          </table>
-        </div>
-        <!-- Help table -->
-        <div>
-          <table id="help" style="color:#666;font-size: 10px; border-collapse: collapse; width: 100%;">
-            <colgroup>
-              <col style="width: 30px; text-align: right;">
-              <col>
-            </colgroup>
-            <tr>
-              <td colspan="2">Draw / erase char pixels by mouse click and drag</td>
-            </tr>
-             <tr>
-              <td colspan="2">Press 'q' to update the font manually</td>
-            </tr>
-            <tr>
-              <td>✗</td>
-              <td>Delete this char</td>
-            </tr>
-            <tr>
-              <td>←↓↑→</td>
-              <td>Move all pixels</td>
-            </tr>
-            <tr>
-              <td>(</td>
-              <td>Extend occupied width</td>
-            </tr>
-            <tr>
-              <td>)</td>
-              <td>Reduce occupied width</td>
-            </tr>
-            <tr>
-              <td>I</td>
-              <td>Import all pixels from another char</td>
-            </tr>
-            <tr>
-              <td>C</td>
-              <td>Clean all pixels of current char</td>
-            </tr>
-            <tr>
-              <td colspan="2">"Add a character" button: Add new char at the end</td>
-            </tr>
-          </table>
-        </div>
+  <div style="margin: 20px;width: 100%;">
+    <div id="overlay" style="display:none;">
+      <div id="overlayContent">
+        Generating / updating font output. Please wait...
       </div>
-      <!-- <div id="editorControls">
+    </div>
+
+    <h2>OLED Font Converter</h2>
+    <div id="controls" style="display:flex; justify-content: flex-start; align-items: center;">
+      <div>
+        <label style="font-weight:600; display:block; margin-bottom:4px;">Font file (TTF/OTF):</label>
+        <input type="file" id="fontFile" accept=".ttf,.otf">
+      </div>
+      <div>
+        <label style="font-weight:600; display:block; margin-bottom:4px;">Font URL:</label>
+        <input type="url" id="fontUrl" placeholder="https://example.com/font.ttf" style="width:100%; padding:4px;">
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 40px; gap:8px 2px; width: 180px; align-items:center;">
+      <label for="fontSize" style="text-align:left;">Font size (px):</label>
+      <input type="number" id="fontSize" class="editable" value="20" min="2" max="200" style="width:100%;" step="1">
+
+
+      <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
+      <input type="number" id="extraTop" class="editable" value="0" min="0" max="100" style="width:100%;" step="1">
+
+      <label for="boldness">Boldness:</label>
+      <div><button id="resetBoldness" type="button">Reset</button></div>
+      <input type="range" id="boldness" min="1" max="254" value="128" style="width:100%;" step="1">
+      <span id="boldnessValue">128</span>
+    </div>
+
+    <div
+      style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
+      <button id="loadFont" class="tiny">Load & Convert</button>
+      <button id="create" class="tiny">Create New</button>
+    </div>
+
+
+    <div id="glyphs" aria-label="Glyph previews"></div>
+
+    <div id="outputContainer">
+      <textarea id="output"
+        placeholder="// Font output will appear here or past your font data here and press edit"></textarea>
+    </div>
+    <div id="fButtons" style="display:flex;gap:6px; justify-content: space-between;">
+      <div style="display: flex; gap: 5px; align-items: flex-start;">
+        <button id="parse" class="tiny">Edit Font</button>
+        <button id="generate" class="tiny">Update Font (q)</button>
+        <label id=live class="tiny">
+          <input type="checkbox" id="liveUpdate">
+          Live update (best for small fonts <= 20px) </label>
+      </div>
+      <div>
+        <button id="downloadH" class="tiny">Save to File</button>
+        <button id="copyClipboard" class="tiny">Copy to Clipboard</button>
+      </div>
+    </div>
+
+    <!-- Editor -->
+    <div id="editorSection">
+      <h3>Glyph Editor</h3>
+      <div id="editorForm">
+        <div style="display: flex;justify-content: flex-start;">
+          <div>
+            <table>
+              <tr>
+                <td style="width:160px">Font array name:</td>
+                <td><input type="text" id="name" placeholder="My_Font" style="width:160px"></td>
+                <td rowspan="4" style="width:48%"><!-- shared textarea is above; editor uses it --></td>
+              </tr>
+              <tr>
+                <td>First char code:</td>
+                <td><input type="number" id="code" value="32" style="width:160px"></td>
+              </tr>
+              <tr>
+                <td>Width (adjustable):</td>
+                <td><input type="number" id="width" class="editable" value="" style="width:160px" step="1"></td>
+              </tr>
+              <tr>
+                <td>Height:</td>
+                <td><input type="number" id="height" value="" style="width:160px" max="64" readonly></td>
+              </tr>
+            </table>
+          </div>
+          <!-- Help table -->
+          <div>
+            <table id="help" style="color:#666;font-size: 10px; border-collapse: collapse; width: 100%;">
+              <colgroup>
+                <col style="width: 30px; text-align: right;">
+                <col>
+              </colgroup>
+              <tr>
+                <td colspan="2">Draw / erase char pixels by mouse click and drag</td>
+              </tr>
+              <tr>
+                <td colspan="2">Press 'q' to update the font manually</td>
+              </tr>
+              <tr>
+                <td>✗</td>
+                <td>Delete this char</td>
+              </tr>
+              <tr>
+                <td>←↓↑→</td>
+                <td>Move all pixels</td>
+              </tr>
+              <tr>
+                <td>(</td>
+                <td>Extend occupied width</td>
+              </tr>
+              <tr>
+                <td>)</td>
+                <td>Reduce occupied width</td>
+              </tr>
+              <tr>
+                <td>I</td>
+                <td>Import all pixels from another char</td>
+              </tr>
+              <tr>
+                <td>C</td>
+                <td>Clean all pixels of current char</td>
+              </tr>
+              <tr>
+                <td colspan="2">"Add a character" button: Add new char at the end</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <!-- <div id="editorControls">
         <button id="parse" class="tiny">Edit Font</button>
         <button id="generate" class="tiny">Generate</button>
         <button id="create" class="tiny">Create New</button>
         <span style="color:#666;font-size:12px;">(Use Parse to import the shared font data above)</span>
       </div> -->
-    </div>
+      </div>
 
-    <div id="chars" role="application" aria-label="Glyph editor grids"></div>
-    <button id="addCharBottom" class="tiny">+ Add Character</button>
+      <div id="chars" role="application" aria-label="Glyph editor grids"></div>
+      <button id="addCharBottom" class="tiny">+ Add Character</button>
+
+    </div>
+  </div>
+  <div id="warningWrap">
+    <div id="overlayWarning">
+    </div>
   </div>
 
   <script>
@@ -421,6 +456,35 @@ Copyright (c) 2016 by Fabrice Weinberg
     window.addEventListener('resize', adjustFButtonsPosition);
     window.addEventListener('scroll', adjustFButtonsPosition);
 
+    const fontSizeInput = document.getElementById('fontSize');
+    const extraTopInput = document.getElementById('extraTop');
+
+    // enforce fontSize between 2 and 200
+    fontSizeInput.addEventListener('input', () => {
+      let val = parseInt(fontSizeInput.value, 10);
+      if (isNaN(val)) return;
+      if (val > 200) fontSizeInput.value = 200;
+      if (val < 2) fontSizeInput.value = 2;
+    });
+
+    // enforce extraTop between 0 and 100
+    extraTopInput.addEventListener('input', () => {
+      let val = parseInt(extraTopInput.value, 10);
+      if (isNaN(val)) return;
+      if (val > 100) extraTopInput.value = 100;
+      if (val < 0) extraTopInput.value = 0;
+    });
+
+    function jumpToChar(code) {
+      const el = document.getElementById(`char-${code}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.style.background = "yellow"; // optional highlight
+        setTimeout(() => el.style.background = "", 1000);
+      } else {
+        alert(`Char ${code} not found`);
+      }
+    }
 
 
     /* ---------------- Converter code ---------------- */
@@ -579,7 +643,11 @@ Copyright (c) 2016 by Fabrice Weinberg
             if (!response.ok) throw new Error("Could not fetch font from URL.");
             const arrayBuffer = await response.arrayBuffer();
             const fontData = new Uint8Array(arrayBuffer);
-            file = new File([fontData], url.split('/').pop() || "remoteFont.ttf", { type: "font/ttf" });
+            file = new File(
+              [fontData],
+              url.split('/').pop() || "remoteFont.ttf",
+              { type: "font/ttf" }
+            );
           }
 
           // If still no file → fail
@@ -622,20 +690,59 @@ Copyright (c) 2016 by Fabrice Weinberg
           renderGlyphs();
 
           let jumpOffset = 0;
+          let warnings = [];
+          let useUint16 = false;
+
+          // -------- Output header (declare out *before* loops!) --------
           let out = `// OLED Font edited from ${file.name}\n`;
-          out += `const char ${fontName}_oled[] PROGMEM = {\n`;
+          const type = useUint16 ? "uint16_t" : "char"; // will be updated later if needed
+          out += `const ${type} ${fontName}_oled[] PROGMEM = {\n`;
           out += `\t${hex(maxWidth)}, // Width: ${maxWidth}\n`;
           out += `\t${hex(maxHeight)}, // Height: ${maxHeight}\n`;
           out += `\t0x20, // First Char: 32\n`;
           out += `\t0xE0, // Number of chars: 224\n\n\t// Jump Table:\n`;
+
+          // -------- Overflow detection + Jump table build --------
           glyphs.forEach(g => {
             if (g.bytes.length) {
+              if (g.bytes.length > 0xFF) {
+                warnings.push(
+                  `Glyph ${g.code} '${String.fromCharCode(g.code)}' → ` +
+                  `Length: ${g.bytes.length} (max 255)`
+                );
+                useUint16 = true;
+              }
+
               out += `\t${hex((jumpOffset >> 8) & 0xFF)}, ${hex(jumpOffset & 0xFF)}, ${hex(g.bytes.length)}, ${hex(g.width)}, // ${g.code} '${String.fromCharCode(g.code)}'\n`;
               jumpOffset += g.bytes.length;
             } else {
               out += `\t0xFF, 0xFF, 0x00, 0x00, // ${g.code} '${String.fromCharCode(g.code)}' (empty)\n`;
             }
           });
+
+
+          // -------- Warnings --------
+          const overlayWarning = document.getElementById("overlayWarning");
+          const warningWrap = document.getElementById("warningWrap");
+          if (warnings.length) {
+            overlayWarning.innerHTML = `
+                                      <div>
+                                        ⚠️ Overflow detected in ${warnings.length} glyph(s)
+                                        <br><br>
+                                        Reduce font size or decrease the width of problematic glyphs manually.
+                                        Or consider switching to <code>uint16_t</code> (library needs to be adjusted).
+                                      </div>
+                                      <pre style="white-space: pre-wrap;font-size: 10px;">${warnings.join("\n")}</pre>
+                                      `;
+            overlayWarning.style.display = "block";
+            overlayWarning.style.right = "0";
+            warningWrap.style.width = "450px";
+          } else {
+            overlayWarning.innerHTML = "";
+            warningWrap.style.width = "0";
+          }
+
+          // -------- Font Data --------
           out += '\n\t// Font Data:\n';
           glyphs.forEach(g => {
             if (g.bytes.length) {
@@ -699,7 +806,10 @@ Copyright (c) 2016 by Fabrice Weinberg
           const wrapper = document.createElement('div');
           wrapper.className = 'char-item';
           const tbl = document.createElement('table');
+
+          // Create caption and assign ID
           const caption = tbl.appendChild(document.createElement('caption'));
+          caption.id = `char-${this.currentCharCode}`;
           FontEditor.updateCaption(caption, this.currentCharCode);
 
           const header = tbl.appendChild(document.createElement('tr'));
@@ -757,11 +867,11 @@ Copyright (c) 2016 by Fabrice Weinberg
         }
 
         static togglePixel(cell) { if (!cell || cell.classList.contains('out')) return; cell.classList.toggle('on'); }
-
-
       }
 
+      let warnings = [];
       FontEditor.prototype.generate = function () {
+        console.log("test");
         const outputEl = document.getElementById('output');
         const chars = this.fontContainer.getElementsByTagName('table');
         const firstCharCode = parseInt(document.getElementById('code').value);
@@ -772,14 +882,15 @@ Copyright (c) 2016 by Fabrice Weinberg
 
         const jumpLines = [];
         const dataLines = [];
-
         const width = parseInt(document.getElementById('width')?.value, 10) || this.width;
 
+        warnings = [];
+        let useUint16 = false;
+        console.log("test");
         for (let ch = 0; ch < chars.length; ch++) {
           const table = chars[ch];
           const rows = table.getElementsByTagName('tr');
 
-          // Always read the current xAdvance from table.jumpData[3]
           const jumpData = table.jumpData || table.parentNode?.jumpData || [0, 0, 0, this.width];
           const xAdvance = jumpData[3] ?? this.width;
 
@@ -809,8 +920,17 @@ Copyright (c) 2016 by Fabrice Weinberg
           while (charBytes.length > 1 && charBytes[charBytes.length - 1] === 0) charBytes.pop();
 
           const charCode = ch + firstCharCode;
-
+          console.log("test", charBytes.length);
           if (notZero) {
+            // Check overflow for jump table / byte length
+            if (charBytes.length > 0xFF) {
+
+              warnings.push(
+                `Glyph ${charCode} '${String.fromCharCode(charCode)}' → Length: ${charBytes.length} (max 255)`
+              );
+              //useUint16 = true;
+            }
+
             // Font data line
             dataLines.push(
               `\t${charBytes.map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase()).join(', ')}, // ${charCode} '${String.fromCharCode(charCode)}'`
@@ -833,8 +953,13 @@ Copyright (c) 2016 by Fabrice Weinberg
           }
         }
 
+
+
+        const type = useUint16 ? "uint16_t" : "char";
+
+        // -------- Output --------
         outputEl.value = `// OLED Font edited by Glyph Editor
-const char ${name}[] PROGMEM = {
+const ${type} ${name}[] PROGMEM = {
 \t0x${width.toString(16).padStart(2, '0').toUpperCase()}, // Width: ${width}
 \t0x${this.height.toString(16).padStart(2, '0').toUpperCase()}, // Height: ${this.height}
 \t0x${firstCharCode.toString(16).padStart(2, '0').toUpperCase()}, // First Char: ${firstCharCode}
@@ -849,6 +974,27 @@ ${dataLines.join('\n')}
 
         // Re-render preview with updated xAdvance
         this.renderGlyphs(2);
+
+        // -------- Warnings Overlay --------
+        const overlayWarning = document.getElementById("overlayWarning");
+        const warningWrap = document.getElementById("warningWrap");
+        if (warnings.length) {
+          overlayWarning.innerHTML = `
+                                      <div>
+                                        ⚠️ Overflow detected in ${warnings.length} glyph(s)
+                                        <br><br>
+                                        Reduce font size or decrease the width of problematic glyphs manually.
+                                        Or consider switching to <code>uint16_t</code> (library needs to be adjusted).
+                                      </div>
+                                      <pre style="white-space: pre-wrap;font-size: 10px;">${warnings.join("\n")}</pre>
+                                      `;
+          overlayWarning.style.display = "block";
+          overlayWarning.style.right = "0";
+          warningWrap.style.width = "450px";
+        } else {
+          overlayWarning.innerHTML = "";
+          warningWrap.style.width = "0";
+        }
 
       };
 
@@ -991,7 +1137,7 @@ ${dataLines.join('\n')}
           srollToEditor();
           hideOverlay();
         }
-
+        getGlyphs()
       }
 
       document.getElementById('create').addEventListener('click', () => {
@@ -1085,6 +1231,22 @@ ${dataLines.join('\n')}
           generateF();
         }
       });
+      function getGlyphs() {
+        document.querySelectorAll('.glyph').forEach(glyphDiv => {
+          glyphDiv.style.cursor = 'pointer'; // indicate clickable
+          glyphDiv.addEventListener('click', () => {
+            const label = glyphDiv.querySelector('.glyph-label');
+            if (!label) return;
+
+            // Extract the number after the # sign
+            const match = label.textContent.match(/^#(\d+)/);
+            if (match) {
+              const charCode = parseInt(match[1], 10);
+              jumpToChar(charCode); // call your jump function
+            }
+          });
+        });
+      }
 
       /* ---------------- Interaction: click, hold & drag, actions ---------------- */
 
@@ -1265,11 +1427,11 @@ ${dataLines.join('\n')}
           document.getElementById('generate').style.pointerEvents = 'none';
           clearTimeout(generateTimer);
           console.log('Schedule generateF in 1.5s');
-    
+
           generateTimer = setTimeout(() => {
-           if (!isMouseDown) {
-            generateF();
-           }
+            if (!isMouseDown) {
+              generateF();
+            }
           }, 1500);
         }
         else {
@@ -1281,7 +1443,7 @@ ${dataLines.join('\n')}
 
       let generateTimer = null;
       let isGenerating = false;
-  
+
 
     })();
 
