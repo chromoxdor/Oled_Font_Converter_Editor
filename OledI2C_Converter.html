@@ -50,7 +50,8 @@ Copyright (c) 2016 by Fabrice Weinberg
     label {
       display: block;
       font-size: 13px;
-      margin-bottom: 6px;
+      /* margin-top: 10px; */
+      padding: 7px 0 4px 0;
     }
 
     /* Converter glyph preview */
@@ -277,8 +278,8 @@ Copyright (c) 2016 by Fabrice Weinberg
     #live {
       border-radius: 0 0 5px 5px;
       background: #97d3ef;
-
     }
+
 
     body {
       display: flex;
@@ -290,6 +291,25 @@ Copyright (c) 2016 by Fabrice Weinberg
       background: #97d3ef;
       padding-right: 11px;
       padding-left: 10px;
+    }
+
+    #settingWrapper {
+      display: flex;
+      width: 436px;
+      align-items: center;
+      gap: 12px;
+      flex-direction: row;
+      border-radius: 5px;
+      padding: 10px;
+      border: 1px solid #767676;
+    }
+
+    .fontSettings {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-direction: row;
+      flex-wrap: wrap;
     }
   </style>
 </head>
@@ -313,23 +333,40 @@ Copyright (c) 2016 by Fabrice Weinberg
         <input type="url" id="fontUrl" placeholder="https://example.com/font.ttf" style="width:100%; padding:4px;">
       </div>
     </div>
+    <div style="display:flex;flex-direction: column;">
+      <div id="settingWrapper">
 
-    <div style="display:grid; grid-template-columns: 1fr 40px; gap:8px 2px; width: 180px; align-items:center;">
-      <label for="fontSize" style="text-align:left;">Font size (px):</label>
-      <input type="number" id="fontSize" class="editable" value="20" min="2" max="200" style="width:100%;" step="1">
+        <div id="basicFontOptions" class="fontSettings">
+          <label for="fontSize" style="text-align:left;">Font size (px):</label>
+          <input type="number" id="fontSize" class="editable" value="20" min="2" max="200" style="width:50px;" step="1">
 
 
-      <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
-      <input type="number" id="extraTop" class="editable" value="0" min="0" max="100" style="width:100%;" step="1">
+          <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
+          <input type="number" id="extraTop" class="editable" value="0" min="0" max="100" style="width:50px;" step="1">
+        </div>
+        <br>
 
+
+        <div id="extraFontOptions" class="fontSettings">
+          <label for="extraWidth" style="text-align:left;">Extra width (px):</label>
+          <input type="number" id="extraWidth" class="editable" value="0" min="0" max="200" style="width:50px;"
+            step="1">
+
+          <label for="extraBottom" style="text-align:left;">Extra bottom padding (px):</label>
+          <input type="number" id="extraBottom" class="editable" value="0" min="0" max="100" style="width:50px;"
+            step="1">
+        </div>
+      </div>
       <label for="boldness">Boldness:</label>
-      <div><button id="resetBoldness" type="button">Reset</button></div>
-      <input type="range" id="boldness" min="1" max="254" value="128" style="width:100%;" step="1">
-      <span id="boldnessValue">128</span>
+      <div style="display: flex;gap: 8px;">
+        <input type="range" id="boldness" min="1" max="254" value="128" style="width:200px;" step="1">
+        <span id="boldnessValue">128</span>
+        <div><button id="resetBoldness" type="button">Reset</button></div>
+      </div>
     </div>
 
     <div
-      style="display:flex;flex-direction:column;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
+      style="display:flex;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
       <button id="loadFont" class="tiny">Load & Convert</button>
       <button id="create" class="tiny">Create New</button>
     </div>
@@ -521,24 +558,37 @@ Copyright (c) 2016 by Fabrice Weinberg
     (async () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      let glyphs = [], fontFace, fontName = 'MyFont', fontSize = 20, extraTop = 0, pixelThreshold = 128;
+      let glyphs = [], fontFace, fontName = 'MyFont';
+      let fontSize = 20, extraTop = 0, extraWidth = 0, extraBottom = 0;
+      let pixelThreshold = 128;
+
+      // Input elements
+      const fontSizeInput = document.getElementById('fontSize');
+      const extraTopInput = document.getElementById('extraTop');
+      const extraWidthInput = document.getElementById('extraWidth');
+      const extraBottomInput = document.getElementById('extraBottom');
 
       function createCanvasForGlyph(width, height) {
-        canvas.width = width; canvas.height = height;
+        canvas.width = width;
+        canvas.height = height;
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = 'black'; ctx.textBaseline = 'top';
+        ctx.fillStyle = 'black';
+        ctx.textBaseline = 'top';
       }
 
       function drawGlyph(ch, width, height) {
         createCanvasForGlyph(width, height);
         ctx.font = `${fontSize}px "${fontName}"`;
-        ctx.fillText(ch, 0, extraTop);
+
+        // offset X by half of extraWidth so extra width is added to both sides
+        const xOffset = Math.floor(extraWidth / 2);
+
+        ctx.fillText(ch, xOffset, extraTop);
         return ctx.getImageData(0, 0, width, height);
       }
 
-      // now takes a threshold parameter
       function convertToBytes(imageData, width, height) {
-        const boldness = parseInt(document.getElementById('boldness').value, 10) || 128; // renamed + inverted
+        const boldness = parseInt(document.getElementById('boldness').value, 10) || 128;
         const arrayHeight = Math.ceil(height / 8);
         const bytes = [];
 
@@ -549,12 +599,8 @@ Copyright (c) 2016 by Fabrice Weinberg
               const y = yBlock * 8 + bit;
               if (y >= height) continue;
               const idx = (y * width + x) * 4;
-              const a = imageData.data[idx + 3]; // alpha channel
-
-              // invert logic: higher boldness = keep more pixels
-              if (a >= (255 - boldness)) {
-                byte |= 1 << bit;
-              }
+              const a = imageData.data[idx + 3];
+              if (a >= (255 - boldness)) byte |= 1 << bit;
             }
             bytes.push(byte);
           }
@@ -568,7 +614,6 @@ Copyright (c) 2016 by Fabrice Weinberg
       }
 
       function hex(b) { return '0x' + b.toString(16).padStart(2, '0').toUpperCase(); }
-
 
       function renderGlyphs(scale = 3) { // default scale 3x
         const container = document.getElementById('glyphs');
@@ -609,104 +654,77 @@ Copyright (c) 2016 by Fabrice Weinberg
           container.appendChild(div);
         });
       }
+
       const boldnessSlider = document.getElementById('boldness');
       const boldnessValue = document.getElementById('boldnessValue');
       const loadFontBtn = document.getElementById('loadFont');
       const resetBoldnessBtn = document.getElementById('resetBoldness');
-
-      let updateTimer = null;
-      const fontSizeInput = document.getElementById('fontSize');
-      const extraTopInput = document.getElementById('extraTop');
-
       const fileInput = document.getElementById('fontFile');
       const urlInput = document.getElementById('fontUrl');
 
-      //const liveUpdateOptions = document.getElementById('liveUpdateOptions');
-
+      let updateTimer = null;
       function scheduleUpdate() {
-        //if (!liveUpdateOptions.checked) return; // Only if live update is enabled
         let file = fileInput.files[0];
-        console.log(file, urlInput.value.trim())
-        if (!file && !urlInput.value.trim()) return
+        if (!file && !urlInput.value.trim()) return;
         clearTimeout(updateTimer);
-        updateTimer = setTimeout(() => {
-          loadFontBtn.click();  // re-run conversion
-        }, 400); // delay in ms
+        updateTimer = setTimeout(() => loadFontBtn.click(), 400);
       }
 
       fontSizeInput.addEventListener('input', scheduleUpdate);
       extraTopInput.addEventListener('input', scheduleUpdate);
-
-      // update text next to slider + trigger regenerate
+      extraWidthInput.addEventListener('input', scheduleUpdate);
+      extraBottomInput.addEventListener('input', scheduleUpdate);
 
       boldnessSlider.addEventListener('change', () => {
         boldnessValue.textContent = boldnessSlider.value;
-        let file = fileInput.files[0];
-        if (!file && !urlInput.value.trim()) return
-        // only auto-reload if a font is already loaded
-        if (glyphs.length > 0) {
-          loadFontBtn.click();
-        }
+        if (glyphs.length > 0) loadFontBtn.click();
       });
 
       resetBoldnessBtn.addEventListener('click', () => {
-        boldnessSlider.value = 128;   // default
+        boldnessSlider.value = 128;
         boldnessValue.textContent = "128";
-
-        let file = fileInput.files[0];
-        if (!file && !urlInput.value.trim()) return
-        if (glyphs.length > 0) {
-          loadFontBtn.click();
-        }
+        if (glyphs.length > 0) loadFontBtn.click();
       });
 
       document.getElementById('loadFont').addEventListener('click', async () => {
+        fontSize = parseInt(fontSizeInput.value) || 20;
+        extraTop = parseInt(extraTopInput.value) || 0;
+        extraWidth = parseInt(extraWidthInput.value) || 0;
+        extraBottom = parseInt(extraBottomInput.value) || 0;
+
         let file = fileInput.files[0];
-
-        fontSize = parseInt(document.getElementById('fontSize').value) || 20;
-        extraTop = parseInt(document.getElementById('extraTop').value) || 0;
-
         try {
-          //If no file, but URL is set → fetch it
-          if (!file && urlInput && urlInput.value.trim()) {
-            const url = urlInput.value.trim();
-            const response = await fetch(url);
+          if (!file && urlInput.value.trim()) {
+            const response = await fetch(urlInput.value.trim());
             if (!response.ok) throw new Error("Could not fetch font from URL.");
             const arrayBuffer = await response.arrayBuffer();
             const fontData = new Uint8Array(arrayBuffer);
-            file = new File(
-              [fontData],
-              url.split('/').pop() || "remoteFont.ttf",
-              { type: "font/ttf" }
-            );
+            file = new File([fontData], urlInput.value.trim().split('/').pop() || "remoteFont.ttf", { type: "font/ttf" });
           }
 
-          // If still no file → fail
-          if (!file) {
-            alert('Please select a font file or enter a font URL');
-            return;
-          }
+          if (!file) { alert('Please select a font file or enter a font URL'); return; }
+
           document.getElementById('glyphs').style.boxShadow = "0px 3px 24px -3px #000000,inset 0px -8px 6px -10px #000000";
           document.getElementById('glyphs').style.height = "300px";
 
-          //Use file (local or from URL)
           fontName = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '_');
           fontFace = new FontFace(fontName, `url(${URL.createObjectURL(file)})`);
           await fontFace.load();
           document.fonts.add(fontFace);
 
           let maxWidth = 0;
-          let maxHeight = fontSize + extraTop;
+          let maxHeight = fontSize + extraTop + extraBottom;
+
           ctx.font = `${fontSize}px "${fontName}"`;
           for (let code = 32; code < 256; code++) {
-            const w = Math.ceil(ctx.measureText(String.fromCharCode(code)).width);
+            const w = Math.ceil(ctx.measureText(String.fromCharCode(code)).width) + extraWidth;
             if (w > maxWidth) maxWidth = w;
           }
 
           glyphs = [];
           for (let code = 32; code < 256; code++) {
             const ch = String.fromCharCode(code);
-            const w = Math.max(1, Math.ceil(ctx.measureText(ch).width));
+            const w = Math.max(1, Math.ceil(ctx.measureText(ch).width) + extraWidth);
             const img = drawGlyph(ch, w, maxHeight);
             const bytes = convertToBytes(img, w, maxHeight, pixelThreshold);
             glyphs.push({
@@ -1017,7 +1035,7 @@ ${dataLines.join('\n')}
 };`;
 
         // Re-render preview with updated xAdvance
-        this.renderGlyphs(2);
+        this.renderGlyphs(3);
 
         // -------- Warnings Overlay --------
         const overlayWarning = document.getElementById("overlayWarning");
@@ -1259,7 +1277,7 @@ ${dataLines.join('\n')}
       });
 
       function srollToEditor() {
-        document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000";
+        document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000,inset 0px -8px 6px -10px #000000";
         document.getElementById('glyphs').style.height = "300px";
         document.getElementById('editorSection').style.display = 'block';
         document.getElementById('output').scrollIntoView({
@@ -1429,7 +1447,7 @@ ${dataLines.join('\n')}
           }
 
           // update the glyph preview immediately
-          editorFont.renderGlyphs(2);
+          editorFont.renderGlyphs(3);
 
           return;
         }
