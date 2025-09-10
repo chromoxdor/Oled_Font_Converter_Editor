@@ -8,7 +8,11 @@ If you like my work consider a donation: [![donate](https://img.shields.io/badge
 
  
 
-<img width="1125" height="929" alt="Bildschirmfoto 2025-09-09 um 19 41 30" src="https://github.com/user-attachments/assets/97d7fb18-9050-49ac-8865-1d2e63d9405b" />
+<img width="925" height="929" alt="Bildschirmfoto 2025-09-09 um 19 41 30" src="https://github.com/user-attachments/assets/97d7fb18-9050-49ac-8865-1d2e63d9405b" />
+
+<img src="https://github.com/user-attachments/assets/e604b33e-cedb-47ac-bbe3-2d896a1d48cb" alt="fonteditor" width="500">
+
+<img width="500" height="932" alt="char error" src="https://github.com/user-attachments/assets/2ae7f621-2d63-499e-89fa-aca2b55b4e0a" />
 
 
 ## Examples
