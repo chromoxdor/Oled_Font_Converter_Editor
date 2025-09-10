@@ -128,7 +128,6 @@ Copyright (c) 2016 by Fabrice Weinberg
     /* Editor area */
     #editorSection {
       margin-top: 22px;
-      border-top: 1px solid #ccc;
       padding-top: 12px;
       display: none;
     }
@@ -358,16 +357,15 @@ Copyright (c) 2016 by Fabrice Weinberg
         </div>
       </div>
       <div style="display: flex;gap: 8px; align-items: center;padding: 8px;">
-      <label for="boldness">Boldness:</label>
-      
+        <label for="boldness">Boldness:</label>
+
         <input type="range" id="boldness" min="1" max="254" value="128" style="width:200px;" step="1">
         <span id="boldnessValue">128</span>
         <div><button id="resetBoldness" type="button">Reset</button></div>
       </div>
     </div>
 
-    <div
-      style="display:flex;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
+    <div style="display:flex;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
       <button id="loadFont" class="tiny">Load & Convert</button>
       <button id="create" class="tiny">Create New</button>
     </div>
@@ -397,7 +395,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
     <!-- Editor -->
     <div id="editorSection">
-      <h3>Glyph Editor</h3>
+      <h2>Glyph Editor</h2>
       <div id="editorForm">
         <div style="display: flex;justify-content: flex-start;">
           <div>
@@ -1281,10 +1279,14 @@ ${dataLines.join('\n')}
         document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000,inset 0px -8px 6px -10px #000000";
         document.getElementById('glyphs').style.height = "300px";
         document.getElementById('editorSection').style.display = 'block';
-        document.getElementById('output').scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'  // or "center", "end", "nearest"
-        });
+        const targetDiv = document.getElementById('editorSection'); // or any div
+        const rect = targetDiv.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        // Scroll to 350px above the div
+        const targetPosition = scrollTop + rect.top - 350;
+
+        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
       }
 
       document.addEventListener("keydown", (event) => {
