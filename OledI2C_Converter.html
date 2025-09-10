@@ -1274,6 +1274,10 @@ ${dataLines.join('\n')}
         waitforGenerateF();
 
       });
+      document.getElementById('name').addEventListener('input', function () {
+        waitforGenerateF();
+
+      });
 
       function srollToEditor() {
         document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000,inset 0px -8px 6px -10px #000000";
