@@ -348,11 +348,11 @@ Copyright (c) 2016 by Fabrice Weinberg
 
         <div id="extraFontOptions" class="fontSettings">
           <label for="extraWidth" style="text-align:left;">Extra width (px):</label>
-          <input type="number" id="extraWidth" class="editable" value="0" min="0" max="200" style="width:50px;"
+          <input type="number" id="extraWidth" class="editable" value="0" min="-100" max="100" style="width:50px;"
             step="1">
 
           <label for="extraBottom" style="text-align:left;">Extra bottom padding (px):</label>
-          <input type="number" id="extraBottom" class="editable" value="0" min="0" max="100" style="width:50px;"
+          <input type="number" id="extraBottom" class="editable" value="0" min="-100" max="100" style="width:50px;"
             step="1">
         </div>
       </div>
@@ -755,7 +755,7 @@ Copyright (c) 2016 by Fabrice Weinberg
             const isBlank = g.bytes.every(b => b === 0);
             if (isBlank) {
               // Blank glyph marker
-              out += `\t0xFF, 0xFF, 0x00, ${hex(g.width)}, // ${g.code} '${String.fromCharCode(g.code)}' (blank)\n`;
+              out += `\t0xFF, 0xFF, 0x00, ${hex(g.width)}, // ${g.code} ' ' (blank)\n`;
             } else {
               if (g.bytes.length) {
                 if (g.bytes.length > 0xFF) {
@@ -769,7 +769,7 @@ Copyright (c) 2016 by Fabrice Weinberg
                 out += `\t${hex((jumpOffset >> 8) & 0xFF)}, ${hex(jumpOffset & 0xFF)}, ${hex(g.bytes.length)}, ${hex(g.width)}, // ${g.code} '${String.fromCharCode(g.code)}'\n`;
                 jumpOffset += g.bytes.length;
               } else {
-                out += `\t0xFF, 0xFF, 0x00, 0x00, // ${g.code} '${String.fromCharCode(g.code)}' (empty)\n`;
+                out += `\t0xFF, 0xFF, 0x00, 0x00, // ${g.code} '' (empty)\n`;
               }
             }
           });
@@ -826,7 +826,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         const editName = document.getElementById("name")?.value.trim();
-        a.download = `${editName && editName.length > 0 ? editName : fontName}_oled.h`;
+        a.download = `${editName && editName.length > 0 ? editName : fontName}_${fontSize}.h`;
         a.click();
       });
 
