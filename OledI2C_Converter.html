@@ -1097,7 +1097,7 @@ ${dataLines.join('\n')}
         const txt = document.getElementById('output').value || '';
         if (!txt.trim()) { alert('Shared output is empty'); hideOverlay(); return; }
         const cleaned = txt.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1').trim();
-        const nameMatch = cleaned.match(/const\s+char\s+([A-Za-z0-9_\-]+)\s*\[\]\s*PROGMEM\s*=/);
+        const nameMatch = cleaned.match(/const\s+\w+\s+(.+?)\s*\[\]/);
         const fontArrayName = nameMatch ? nameMatch[1] : '';
         document.getElementById('name').value = fontArrayName;
         const inside = (cleaned.split('{').slice(1).join('{') || '').split('}')[0];
