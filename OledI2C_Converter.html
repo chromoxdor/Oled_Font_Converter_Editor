@@ -121,6 +121,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       padding: 8px;
       box-sizing: border-box;
       white-space: pre;
+      margin-top: 10px;
     }
 
     /* Editor area */
@@ -283,6 +284,14 @@ Copyright (c) 2016 by Fabrice Weinberg
       display: flex;
       margin: 0;
     }
+
+    .buttonControls {
+      border-radius: 0 0 5px 5px;
+      background: #97d3ef;
+      padding-right: 11px;
+      padding-left: 10px;
+    }
+
   </style>
 </head>
 
@@ -334,14 +343,16 @@ Copyright (c) 2016 by Fabrice Weinberg
         placeholder="// Font output will appear here or past your font data here and press edit"></textarea>
     </div>
     <div id="fButtons" style="display:flex;gap:6px; justify-content: space-between;">
-      <div style="display: flex; gap: 5px; align-items: flex-start;">
-        <button id="parse" class="tiny">Edit Font</button>
-        <button id="generate" class="tiny">Update Font (q)</button>
-        <label id=live class="tiny">
+      <div style="display: flex; gap: 5px;">
+        <div class="buttonControls buttonBorder">
+          <button id="parse" class="tiny">Edit Font</button>
+          <button id="generate" class="tiny">Update Font (q)</button>
+        </div>
+        <label id=live class="tiny buttonBorder">
           <input type="checkbox" id="liveUpdate">
           Live update (best for small fonts <= 20px) </label>
       </div>
-      <div>
+      <div class="buttonControls buttonBorder">
         <button id="downloadH" class="tiny">Save to File</button>
         <button id="copyClipboard" class="tiny">Copy to Clipboard</button>
       </div>
@@ -435,14 +446,34 @@ Copyright (c) 2016 by Fabrice Weinberg
   </div>
 
   <script>
+
     function adjustFButtonsPosition() {
       const glyphs = document.getElementById('glyphs');
       const fButtons = document.getElementById('fButtons');
 
       // get the bottom position of glyphs relative to the page
       const glyphsRect = glyphs.getBoundingClientRect();
+
       // Set the top of fButtons right below glyphs
       fButtons.style.top = glyphsRect.bottom + 'px';
+
+      // Select all elements with class 'buttonBorder'
+      const buttons = document.querySelectorAll('.buttonBorder');
+console.log(glyphsRect.bottom, fButtons.getBoundingClientRect().top)
+      // Check if fButtons has reached the bottom of glyphs
+      if (glyphsRect.bottom == fButtons.getBoundingClientRect().top) {
+        buttons.forEach(btn => {
+          btn.style.border = '1px solid #767676';
+          btn.style.borderTop = 'none';
+          
+        });
+      } else {
+        buttons.forEach(btn => {
+          // Remove the added border
+          btn.style.border = '';
+          btn.style.borderTop = '';
+        });
+      }
     }
 
     // Call it when glyphs is resized (using ResizeObserver)
@@ -450,7 +481,7 @@ Copyright (c) 2016 by Fabrice Weinberg
     const resizeObserver = new ResizeObserver(() => {
       adjustFButtonsPosition();
     });
-    resizeObserver.observe(glyphs);
+    resizeObserver.observe(glyphs); 
 
     // Also adjust on window scroll / resize
     window.addEventListener('resize', adjustFButtonsPosition);
@@ -655,7 +686,7 @@ Copyright (c) 2016 by Fabrice Weinberg
             alert('Please select a font file or enter a font URL');
             return;
           }
-          document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000";
+          document.getElementById('glyphs').style.boxShadow = "0px 3px 24px -3px #000000,inset 0px -8px 6px -10px #000000";
           document.getElementById('glyphs').style.height = "300px";
 
           //Use file (local or from URL)
