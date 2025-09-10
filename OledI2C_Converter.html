@@ -727,7 +727,7 @@ Copyright (c) 2016 by Fabrice Weinberg
           // -------- Output header (declare out *before* loops!) --------
           let out = `// OLED Font edited from ${file.name}\n`;
           const type = useUint16 ? "uint16_t" : "char"; // will be updated later if needed
-          out += `const ${type} ${fontName}_oled[] PROGMEM = {\n`;
+          out += `const ${type} ${fontName}_${fontSize}[] PROGMEM = {\n`;
           out += `\t${hex(maxWidth)}, // Width: ${maxWidth}\n`;
           out += `\t${hex(maxHeight)}, // Height: ${maxHeight}\n`;
           out += `\t0x20, // First Char: 32\n`;
