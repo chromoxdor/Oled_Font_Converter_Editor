@@ -10,6 +10,11 @@ A mashup of a [font converter](https://oleddisplay.squix.ch/) and a [glyph edito
 
 ![fesit2](https://github.com/user-attachments/assets/5736e6d3-3b1f-44ef-a376-8be81c5b7792)
 
+
+### Exact adjustments for your screen.
+![oled adj](https://github.com/user-attachments/assets/f4ead09f-dae1-49ff-bb49-2efa0b79932e)
+
+
 ### Sample Glyphs
 | Cyrillic | Arabic |
 |----------|--------|
