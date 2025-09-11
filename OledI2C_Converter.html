@@ -23,75 +23,123 @@ Copyright (c) 2016 by Fabrice Weinberg
   <meta charset="utf-8">
   <title>OLED Font Converter + Glyph Editor</title>
   <style>
+    /* ========== Base Styles ========== */
     body {
       font-family: sans-serif;
-      margin: 20px;
       background: #97d3ef;
+      display: flex;
+      margin: 0;
     }
 
     h2,
     h3 {
-      margin: .5rem 0;
+      margin: 0.5rem 0;
     }
 
-    /* Controls */
+    label {
+      display: block;
+      font-size: 13px;
+      padding: 7px 0 4px 0;
+    }
+
+    /* small helper */
+    .tiny {
+      font-size: 12px;
+      padding: 6px 8px;
+    }
+
+    /* spin buttons in editable number inputs */
+    .editable::-webkit-inner-spin-button,
+    .editable::-webkit-outer-spin-button {
+      opacity: 1;
+    }
+
+    /* ========== Controls ========== */
     #controls {
-      margin-bottom: 10px;
       display: flex;
-      gap: 15px;
       flex-wrap: wrap;
       align-items: flex-end;
+      gap: 15px;
+      margin-bottom: 10px;
     }
 
     #controls>div {
       min-width: 180px;
     }
 
-    label {
-      display: block;
-      font-size: 13px;
-      /* margin-top: 10px; */
-      padding: 7px 0 4px 0;
+    #settingWrapper {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      width: 450px;
+      padding: 10px;
+      border: 1px solid #767676;
+      border-radius: 5px;
     }
 
-    /* Converter glyph preview */
-    #glyphs {
+    .fontSettings {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .buttonControls,
+    #live {
+      border-radius: 0 0 5px 5px;
+      background: #97d3ef;
+    }
+
+    .buttonControls {
+      padding: 0 10px 5px 10px;
+      gap: 5px;
+      display: flex;
+    }
+
+    /* ========== Glyph Preview ========== */
+    #glyphsbox {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: #97d3ef;
-      border-bottom: 5px solid #97d3ef;
-      padding: 6px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      transition: 0.8s;
       height: 0;
+      box-sizing: border-box;
       overflow-y: auto;
       resize: vertical;
+      background: #97d3ef;
+    }
+
+    div#glyphs {
+      display: flex;
+      overflow-y: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      border: 8px solid #97d3ef;
+      height: 100%;
+      box-sizing: border-box;
+      gap: 10px;
     }
 
     #fButtons {
       position: sticky;
       top: 0;
+      bottom: 0;
       z-index: 100;
       overflow-y: auto;
-    }
-
-    #outputContainer,
-    #editorSection {
-      margin-top: 320px;
-      /* adjust depending on #glyphs max-height */
+      background: #97d3ef;
     }
 
     .glyph {
       display: flex;
       flex-direction: column;
       align-items: center;
-      cursor: default;
-      background: #f3f3f3;
+      height: fit-content;
       padding: 4px;
       border-radius: 4px;
-      height: fit-content;
+      background: #f3f3f3;
+      cursor: default;
     }
 
     .glyph canvas {
@@ -100,36 +148,43 @@ Copyright (c) 2016 by Fabrice Weinberg
     }
 
     .glyph-label {
-      font-size: 11px;
       margin-top: 4px;
+      font-size: 11px;
       text-align: center;
       color: #333;
     }
 
-    /* Shared output textarea */
+    /* ========== Output ========== */
     #outputContainer {
-      margin-top: 0px;
       display: flex;
-      gap: 8px;
       align-items: flex-start;
+      gap: 8px;
+      margin-top: 0;
     }
 
     #output {
       width: 100%;
       height: 260px;
+      margin-top: 10px;
+      padding: 8px;
       font-family: monospace;
       font-size: 12px;
-      padding: 8px;
-      box-sizing: border-box;
       white-space: pre;
-      margin-top: 10px;
+      box-sizing: border-box;
+      resize: vertical;
     }
 
-    /* Editor area */
+    #generate {
+      visibility: hidden;
+      /* initially hidden */
+      pointer-events: none;
+    }
+
+    /* ========== Editor ========== */
     #editorSection {
+      display: none;
       margin-top: 22px;
       padding-top: 12px;
-      display: none;
     }
 
     #editorForm table {
@@ -138,18 +193,18 @@ Copyright (c) 2016 by Fabrice Weinberg
     }
 
     #editorForm td {
-      vertical-align: middle;
       padding: 4px;
+      vertical-align: middle;
     }
 
     #editorControls {
-      margin-top: 8px;
       display: flex;
-      gap: 10px;
       align-items: center;
+      gap: 10px;
+      margin-top: 8px;
     }
 
-    /* Char items (flex) */
+    /* ========== Character Items ========== */
     #chars {
       display: flex;
       flex-wrap: wrap;
@@ -160,12 +215,12 @@ Copyright (c) 2016 by Fabrice Weinberg
     .char-item {
       display: flex;
       flex-direction: column;
-      gap: 6px;
       align-items: center;
-      background: #fff;
+      gap: 6px;
       padding: 6px;
       border: 1px solid #ddd;
       border-radius: 6px;
+      background: #fff;
     }
 
     .char-item table {
@@ -174,83 +229,63 @@ Copyright (c) 2016 by Fabrice Weinberg
     }
 
     .char-item caption {
+      margin-bottom: 6px;
       font-size: 12px;
       font-weight: 600;
-      margin-bottom: 6px;
     }
 
     .char-item th,
     .char-item td {
-      box-sizing: border-box;
-      border: 1px solid #CCC;
       width: 12px;
       height: 12px;
-      padding: 0;
       margin: 0;
-      text-align: center;
+      padding: 0;
       font-size: 11px;
+      text-align: center;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      background: #fff;
       user-select: none;
-      background: #FFF;
     }
 
     .char-item th[action] {
-      cursor: pointer;
-      background: #F2F2F2;
       font-size: 11px;
+      cursor: pointer;
+      background: #f2f2f2;
     }
 
     .char-item td.on {
-      background: #0A6;
-      background: #00F;
+      background: #00f;
     }
 
-    /* turn blue */
     .char-item td.out {
-      background: #EEE;
+      background: #eee;
     }
 
-    /* small helper */
-    .tiny {
-      font-size: 12px;
-      padding: 6px 8px;
-    }
-
-    .editable::-webkit-inner-spin-button,
-    .editable::-webkit-outer-spin-button {
-      opacity: 1;
-    }
-
-    #generate {
-      /* initially hidden */
-      visibility: hidden;
-      pointer-events: none;
-    }
-
+    /* ========== Overlay ========== */
     #overlay {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.7);
-      /* semi-transparent white */
       z-index: 9999;
-      /* on top of everything */
       display: flex;
       justify-content: center;
       align-items: center;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.7);
     }
 
     #overlayContent {
-      border: 2px solid red;
-      color: red;
       padding: 20px 30px;
       font-size: 18px;
       font-weight: bold;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      color: red;
       text-align: center;
+      border: 2px solid red;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
 
     #overlayWarning {
@@ -258,57 +293,20 @@ Copyright (c) 2016 by Fabrice Weinberg
       top: 0;
       max-height: 100vh;
       overflow: auto;
-      align-items: center;
-      border: 2px solid red;
-      color: red;
       padding: 5px 10px;
       font-size: 16px;
       font-weight: bold;
-      background: #fff;
+      color: red;
+      border: 2px solid red;
       border-radius: 8px;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      align-items: center;
     }
 
     #warningWrap {
-      transition: .4s;
       width: 0;
-    }
-
-    #live {
-      border-radius: 0 0 5px 5px;
-      background: #97d3ef;
-    }
-
-
-    body {
-      display: flex;
-      margin: 0;
-    }
-
-    .buttonControls {
-      border-radius: 0 0 5px 5px;
-      background: #97d3ef;
-      padding-right: 11px;
-      padding-left: 10px;
-    }
-
-    #settingWrapper {
-      display: flex;
-      width: 436px;
-      align-items: center;
-      gap: 12px;
-      flex-direction: row;
-      border-radius: 5px;
-      padding: 10px;
-      border: 1px solid #767676;
-    }
-
-    .fontSettings {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-direction: row;
-      flex-wrap: wrap;
+      transition: 0.4s;
     }
   </style>
 </head>
@@ -341,7 +339,8 @@ Copyright (c) 2016 by Fabrice Weinberg
 
 
           <label for="extraTop" style="text-align:left;">Extra top padding (px):</label>
-          <input type="number" id="extraTop" class="editable" value="0" min="0" max="100" style="width:50px;" step="1">
+          <input type="number" id="extraTop" class="editable" value="0" min="-100" max="100" style="width:50px;"
+            step="1">
         </div>
         <br>
 
@@ -365,13 +364,15 @@ Copyright (c) 2016 by Fabrice Weinberg
       </div>
     </div>
 
-    <div style="display:flex;gap:6px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
+    <div style="display:flex;gap:5px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
       <button id="loadFont" class="tiny">Load & Convert</button>
       <button id="create" class="tiny">Create New</button>
     </div>
 
 
-    <div id="glyphs" aria-label="Glyph previews"></div>
+    <div id="glyphsbox" aria-label="Glyph previews">
+      <div id="glyphs"></div>
+    </div>
 
     <div id="outputContainer">
       <textarea id="output"
@@ -483,26 +484,28 @@ Copyright (c) 2016 by Fabrice Weinberg
   <script>
 
     function adjustFButtonsPosition() {
-      const glyphs = document.getElementById('glyphs');
+      const glyphs = document.getElementById('glyphsbox');
       const fButtons = document.getElementById('fButtons');
 
       // get the bottom position of glyphs relative to the page
       const glyphsRect = glyphs.getBoundingClientRect();
 
       // Set the top of fButtons right below glyphs
-      fButtons.style.top = glyphsRect.bottom + 'px';
+      fButtons.style.top = glyphsRect.bottom - 1 + 'px';
 
       // Select all elements with class 'buttonBorder'
       const buttons = document.querySelectorAll('.buttonBorder');
       console.log(glyphsRect.bottom, fButtons.getBoundingClientRect().top)
       // Check if fButtons has reached the bottom of glyphs
-      if (glyphsRect.bottom == fButtons.getBoundingClientRect().top) {
+      if (glyphsRect.bottom - 1 == fButtons.getBoundingClientRect().top) {
+        fButtons.style.background = 'none';
         buttons.forEach(btn => {
           btn.style.border = '1px solid #767676';
           btn.style.borderTop = 'none';
 
         });
       } else {
+        fButtons.style.background = '#97d3ef';
         buttons.forEach(btn => {
           // Remove the added border
           btn.style.border = '';
@@ -512,7 +515,7 @@ Copyright (c) 2016 by Fabrice Weinberg
     }
 
     // Call it when glyphs is resized (using ResizeObserver)
-    const glyphs = document.getElementById('glyphs');
+    const glyphs = document.getElementById('glyphsbox');
     const resizeObserver = new ResizeObserver(() => {
       adjustFButtonsPosition();
     });
@@ -538,7 +541,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       let val = parseInt(extraTopInput.value, 10);
       if (isNaN(val)) return;
       if (val > 100) extraTopInput.value = 100;
-      if (val < 0) extraTopInput.value = 0;
+      if (val < -100) extraTopInput.value = -100;
     });
 
     function jumpToChar(code) {
@@ -703,8 +706,9 @@ Copyright (c) 2016 by Fabrice Weinberg
 
           if (!file) { alert('Please select a font file or enter a font URL'); return; }
 
-          document.getElementById('glyphs').style.boxShadow = "0px 3px 24px -3px #000000,inset 0px -8px 6px -10px #000000";
-          document.getElementById('glyphs').style.height = "300px";
+          //document.getElementById('glyphsbox').style.boxShadow = "0px 3px 24px -3px #000000,inset 0px -8px 6px -10px #000000";
+          document.getElementById('glyphsbox').style.border = "1px solid #767676";
+          document.getElementById('glyphsbox').style.height = "300px";
 
           fontName = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '_');
           fontFace = new FontFace(fontName, `url(${URL.createObjectURL(file)})`);
@@ -826,8 +830,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         const editName = document.getElementById("name")?.value.trim();
-        a.download = `${editName && editName.length > 0 ? editName : fontName}_${fontSize}.h`;
-        a.click();
+        a.download = `${editName && editName.length > 0 ? editName : fontName + '_' + fontSize}.h`; a.click();
       });
 
       document.getElementById('copyClipboard').addEventListener('click', () => {
@@ -1280,8 +1283,8 @@ ${dataLines.join('\n')}
       });
 
       function srollToEditor() {
-        document.getElementById('glyphs').style.boxShadow = "0px 5px 20px 1px #000000,inset 0px -8px 6px -10px #000000";
-        document.getElementById('glyphs').style.height = "300px";
+        document.getElementById('glyphsbox').style.border = "1px solid #767676";
+        document.getElementById('glyphsbox').style.height = "300px";
         document.getElementById('editorSection').style.display = 'block';
         const targetDiv = document.getElementById('editorSection'); // or any div
         const rect = targetDiv.getBoundingClientRect();
