@@ -5,13 +5,11 @@ If you like my work consider a donation: [![donate](https://img.shields.io/badge
 ### a mashup of a [font converter](https://oleddisplay.squix.ch/) and a [glyph editor](https://rawgit.com/lorol/esp8266-oled-ssd1306/master/resources/glyphEditor.html)
  visit: https://raw.githack.com/chromoxdor/Oled_Font_Converter_Editor/main/OledI2C_Converter.html
 
-
- 
-<img width="900" height="937" alt="fonteditor" src="https://github.com/user-attachments/assets/2b8432d6-6597-45f1-a1b7-f4d5f3ec59a0" />
+<img width="870" height="835" alt="fontedit" src="https://github.com/user-attachments/assets/68dfddba-3e9f-4570-b320-f75f8c0756ec" />
 
 
-<img src="https://github.com/user-attachments/assets/e604b33e-cedb-47ac-bbe3-2d896a1d48cb" alt="fonteditor" width="500">
-<img width="500" height="627" alt="charerror" src="https://github.com/user-attachments/assets/b8bec0d1-9dff-4051-a185-212053a50cdc" />
+<img src="https://github.com/user-attachments/assets/e604b33e-cedb-47ac-bbe3-2d896a1d48cb" alt="fonteditor" width="400">
+<img width="355" height="627" alt="charerror" src="https://github.com/user-attachments/assets/b8bec0d1-9dff-4051-a185-212053a50cdc" />
 
 
 
