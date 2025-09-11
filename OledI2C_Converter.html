@@ -117,9 +117,10 @@ Copyright (c) 2016 by Fabrice Weinberg
       flex-direction: row;
       flex-wrap: wrap;
       border: 8px solid #97d3ef;
-      height: 100%;
+      height: fit-content;
       box-sizing: border-box;
       gap: 10px;
+      align-content: flex-start;
     }
 
     #fButtons {
@@ -362,6 +363,10 @@ Copyright (c) 2016 by Fabrice Weinberg
         <span id="boldnessValue">128</span>
         <div><button id="resetBoldness" type="button">Reset</button></div>
       </div>
+      <div>
+        <label for="charRange">Convert chars (ranges):</label>
+        <input type="text" id="charRange" placeholder="e.g. 33-128 or 56,57,58,66-79">
+      </div>
     </div>
 
     <div style="display:flex;gap:5px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
@@ -553,7 +558,11 @@ Copyright (c) 2016 by Fabrice Weinberg
         alert(`Char ${code} not found`);
       }
     }
-
+    function openGlyphTable() {
+      document.getElementById('glyphsbox').style.border = "1px solid #767676";
+      let glyphsHeight = document.getElementById('glyphs').offsetHeight;
+      document.getElementById('glyphsbox').style.height = Math.min(glyphsHeight, 300) + "px";
+    }
 
     /* ---------------- Converter code ---------------- */
     (async () => {
@@ -623,6 +632,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         glyphs.forEach(g => {
           const div = document.createElement('div');
           div.className = 'glyph';
+          div.id = `#${g.code}`;
 
           const c = document.createElement('canvas');
           c.width = g.width * scale;   // scale width
@@ -705,10 +715,6 @@ Copyright (c) 2016 by Fabrice Weinberg
 
           if (!file) { alert('Please select a font file or enter a font URL'); return; }
 
-          //document.getElementById('glyphsbox').style.boxShadow = "0px 3px 24px -3px #000000,inset 0px -8px 6px -10px #000000";
-          document.getElementById('glyphsbox').style.border = "1px solid #767676";
-          document.getElementById('glyphsbox').style.height = "300px";
-
           fontName = file.name.replace(/\.[^.]+$/, '').replace(/\s+/g, '_');
           fontFace = new FontFace(fontName, `url(${URL.createObjectURL(file)})`);
           await fontFace.load();
@@ -723,35 +729,89 @@ Copyright (c) 2016 by Fabrice Weinberg
             if (w > maxWidth) maxWidth = w;
           }
 
-          glyphs = [];
-          for (let code = 32; code < 256; code++) {
-            const ch = String.fromCharCode(code);
-            const w = Math.max(1, Math.ceil(ctx.measureText(ch).width) + extraWidth);
-            const img = drawGlyph(ch, w, maxHeight);
-            const bytes = convertToBytes(img, w, maxHeight, pixelThreshold);
-            glyphs.push({
-              code,
-              bytes: bytes.length ? bytes : new Array(Math.ceil(maxHeight / 8) * w).fill(0),
-              width: w,
-              height: maxHeight,
-              arrayHeight: Math.ceil(maxHeight / 8)
+
+          const rangeInput = document.getElementById('charRange')?.value.trim();
+          let selectedChars = null;
+          let maxChar = 255; // default max if no input
+
+          if (rangeInput) {
+            selectedChars = new Set();
+            maxChar = 32; // start from minimum for range calculation
+            let minInvalidChar = Infinity;
+
+            rangeInput.split(',').map(s => s.trim()).forEach(part => {
+              if (part.includes('-')) {
+                const [start, end] = part.split('-').map(Number);
+                if (!isNaN(start) && !isNaN(end) && start <= end) {
+                  for (let i = start; i <= end; i++) {
+                    if (i >= 32) { // ignore below 32
+                      selectedChars.add(i);
+                      if (i > maxChar) maxChar = i;
+                    } else {
+                      minInvalidChar = Math.min(minInvalidChar, i);
+                    }
+                  }
+                }
+              } else {
+                const n = Number(part);
+                if (!isNaN(n)) {
+                  if (n >= 32) {
+                    selectedChars.add(n);
+                    if (n > maxChar) maxChar = n;
+                  } else {
+                    minInvalidChar = Math.min(minInvalidChar, n);
+                  }
+                }
+              }
             });
+
+            if (minInvalidChar < 32) {
+              alert(`Warning: characters below 32 are ignored (minimum char is 32).`);
+            }
           }
 
+          // Generate glyphs
+          glyphs = [];
+          for (let code = 32; code <= maxChar; code++) {
+            const ch = String.fromCharCode(code);
+            const w = Math.max(1, Math.ceil(ctx.measureText(ch).width) + extraWidth);
+
+            if (code === 32 || !selectedChars || selectedChars.has(code)) {
+              const img = drawGlyph(ch, w, maxHeight);
+              const bytes = convertToBytes(img, w, maxHeight, pixelThreshold);
+              glyphs.push({
+                code,
+                bytes: bytes.length ? bytes : new Array(Math.ceil(maxHeight / 8) * w).fill(0),
+                width: w,
+                height: maxHeight,
+                arrayHeight: Math.ceil(maxHeight / 8)
+              });
+            } else {
+              // Not in range → blank glyph
+              glyphs.push({
+                code,
+                bytes: new Array(Math.ceil(maxHeight / 8) * w).fill(0),
+                width: w,
+                height: maxHeight,
+                arrayHeight: Math.ceil(maxHeight / 8)
+              });
+            }
+          }
           renderGlyphs();
+          openGlyphTable();
 
           let jumpOffset = 0;
           let warnings = [];
           let useUint16 = false;
 
-          // -------- Output header (declare out *before* loops!) --------
+          // -------- Output header --------
           let out = `// OLED Font edited from ${file.name}\n`;
           const type = useUint16 ? "uint16_t" : "char"; // will be updated later if needed
           out += `const ${type} ${fontName}_${fontSize}[] PROGMEM = {\n`;
           out += `\t${hex(maxWidth)}, // Width: ${maxWidth}\n`;
           out += `\t${hex(maxHeight)}, // Height: ${maxHeight}\n`;
           out += `\t0x20, // First Char: 32\n`;
-          out += `\t0xE0, // Number of chars: 224\n\n\t// Jump Table:\n`;
+          out += `\t${hex(maxChar - 32 + 1)}, // Number of chars: ${maxChar - 32 + 1}\n\n\t// Jump Table:\n`;
 
           // -------- Overflow detection + Jump table build --------
           glyphs.forEach(g => {
@@ -810,7 +870,7 @@ Copyright (c) 2016 by Fabrice Weinberg
               out += '\t' + g.bytes.map(b => hex(b)).join(',') + `, // ${g.code} '${String.fromCharCode(g.code)}'\n`;
             } else if (isBlank) {
               // Optionally add a comment for clarity, but do NOT write bytes
-              out += `\t// ${g.code} '${String.fromCharCode(g.code)}'\n`;
+              // out += `\t// ${g.code} '${String.fromCharCode(g.code)}'\n`;
             }
           });
           out += '};\n';
@@ -1279,8 +1339,7 @@ ${dataLines.join('\n')}
       });
 
       function srollToEditor() {
-        document.getElementById('glyphsbox').style.border = "1px solid #767676";
-        document.getElementById('glyphsbox').style.height = "300px";
+        openGlyphTable();
         document.getElementById('editorSection').style.display = 'block';
         const targetDiv = document.getElementById('editorSection'); // or any div
         const rect = targetDiv.getBoundingClientRect();
@@ -1428,10 +1487,22 @@ ${dataLines.join('\n')}
               break;
             case 'clean':
               if (confirm('Delete the pixels ?')) {
-                for (let p = 0; p < pixels.length; p++) pixels[p].className = '';
+                // 1. Clear editor table UI
+                for (let p = 0; p < pixels.length; p++) {
+                  pixels[p].className = '';
+                }
+
+                // 2. Reset advance width (jumpData[3] is xAdvance)
+                if (!table.jumpData) table.jumpData = [0, 0, 0, editorFont.width];
+
+                /*// 3. Wipe the glyph data so it exports as blank
+                const glyph = glyphs.find(g => g.code === editorCharCode);
+                if (glyph) {
+                  glyph.bytes = new Array(glyph.arrayHeight * glyph.width).fill(0);
+                  glyph.width = editorFont.width; // make sure jump table width matches editor width
+                  colsole.log('Glyph data cleared', glyph.width, glyph.bytes.length);
+                }*/
               }
-              table.jumpData[3] = editorFont.width; // reset xAdvance
-              //waitforGenerateF();
               break;
             case 'copy': {
               const charNumber = parseInt(prompt('Source char #:'));
@@ -1483,7 +1554,6 @@ ${dataLines.join('\n')}
           event.target.closest('.char-item'); // make sure it belongs to a glyph
 
         if (!isPaintable) {
-          console.log('Clicked outside paintable area, generation skipped.');
           return;
         }
         waitforGenerateF();
