@@ -698,6 +698,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       });
 
       document.getElementById('loadFont').addEventListener('click', async () => {
+        document.getElementById('editorSection').style.display = 'none';
         fontSize = parseInt(fontSizeInput.value) || 20;
         extraTop = parseInt(extraTopInput.value) || 0;
         extraWidth = parseInt(extraWidthInput.value) || 0;
