@@ -411,12 +411,11 @@ Copyright (c) 2016 by Fabrice Weinberg
     <!-- Input + button -->
     <details id="previewBtn">
       <summary>Preview</summary>
-      <div style="margin-top: 8px; display: flex; gap: 8px; flex-direction: column;">
-        <input type="text" id="previewText" value="Hello OLED!" style="width:200px;">
-        <!-- <button onclick="renderGlyphPreview()">Show Preview</button> -->
+      <div style="margin-top: 8px; display: flex; gap: 8px; flex-direction: row;">
+        <textarea id="previewText" rows="1" style="resize: none; overflow: hidden;"
+          oninput="renderGlyphPreview();"></textarea>
+        <canvas id="previewCanvas" width="128" height="64" style="border:1px solid gray;height: 96px;"></canvas>
 
-        <!-- OLED preview window -->
-        <canvas id="previewCanvas" width="128" height="64" style="border:1px solid #333; image-rendering:pixelated;">
       </div></canvas>
     </details>
 
@@ -649,29 +648,35 @@ Copyright (c) 2016 by Fabrice Weinberg
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Safety: check glyphs is an array
       if (!Array.isArray(glyphs) || glyphs.length === 0) {
         console.warn("No glyphs available to render preview.");
         return;
       }
 
-      let cursorX = 0;   // left padding
-      let cursorY = 0;   // top padding
+      let cursorX = 2;   // left padding
+      let cursorY = 2;   // top padding
       const lineHeight = glyphs[0].height || 12;
       const scale = 1;
 
       for (let ch of text) {
+        if (ch === '\n') {
+          // Handle new line
+          cursorX = 2;
+          cursorY += lineHeight + 1;
+          continue;
+        }
+
         const code = ch.charCodeAt(0);
         const glyph = glyphs.find(g => g.code === code);
 
-        if (!glyph) continue; // skip if char not in glyphs
+        if (!glyph) continue; //skip if char not in glyphs
 
         // Wrap line if width exceeded
-        if (cursorX + glyph.width > canvas.width+4) {
+        if (cursorX + glyph.width > canvas.width) {
           cursorX = 2;
           cursorY += lineHeight + 1;
         }
-        console.log(glyph);
+
         drawGlyphOnCanvas(ctx, glyph, cursorX, cursorY, scale);
 
         cursorX += glyph.width + 1;
