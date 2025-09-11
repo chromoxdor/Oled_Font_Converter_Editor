@@ -738,12 +738,14 @@ Copyright (c) 2016 by Fabrice Weinberg
           }
 
           let maxChar = 255; // default max if no input
+          let minChar = 32;  // default min
           const rangeInput = document.getElementById('charRange')?.value.trim();
           let selectedChars = null;
 
           if (rangeInput) {
             selectedChars = new Set();
-            maxChar = 32; // start from minimum for range calculation
+            maxChar = 32;      // reset for range calculation
+            minChar = Infinity; // track the lowest valid char
             let minInvalidChar = Infinity;
 
             rangeInput.split(',').map(s => s.trim()).forEach(part => {
@@ -754,6 +756,7 @@ Copyright (c) 2016 by Fabrice Weinberg
                     if (i >= 32) { // ignore below 32
                       selectedChars.add(i);
                       if (i > maxChar) maxChar = i;
+                      if (i < minChar) minChar = i;
                     } else {
                       minInvalidChar = Math.min(minInvalidChar, i);
                     }
@@ -765,6 +768,7 @@ Copyright (c) 2016 by Fabrice Weinberg
                   if (n >= 32) {
                     selectedChars.add(n);
                     if (n > maxChar) maxChar = n;
+                    if (n < minChar) minChar = n;
                   } else {
                     minInvalidChar = Math.min(minInvalidChar, n);
                   }
@@ -775,15 +779,25 @@ Copyright (c) 2016 by Fabrice Weinberg
             if (minInvalidChar < 32) {
               alert(`Warning: characters below 32 are ignored (minimum char is 32).`);
             }
+
+            // if only invalid chars were entered
+            if (minChar === Infinity) {
+              minChar = 32;
+              maxChar = 255;
+              selectedChars = null;
+            }
+          } else {
+            minChar = 32;  // no input → normal full range
+            maxChar = 255;
           }
 
-          // Generate glyphs
+          // -------- Generate glyphs --------
           glyphs = [];
-          for (let code = 32; code <= maxChar; code++) {
+          for (let code = minChar; code <= maxChar; code++) {
             const ch = String.fromCharCode(code);
             const w = Math.max(1, Math.ceil(ctx.measureText(ch).width) + extraWidth);
 
-            if (code === 32 || !selectedChars || selectedChars.has(code)) {
+            if (!selectedChars || selectedChars.has(code)) {
               const img = drawGlyph(ch, w, maxHeight);
               const bytes = convertToBytes(img, w, maxHeight, pixelThreshold);
               glyphs.push({
@@ -817,8 +831,8 @@ Copyright (c) 2016 by Fabrice Weinberg
           out += `const ${type} ${fontName}_${fontSize}[] PROGMEM = {\n`;
           out += `\t${hex(maxWidth)}, // Width: ${maxWidth}\n`;
           out += `\t${hex(maxHeight)}, // Height: ${maxHeight}\n`;
-          out += `\t0x20, // First Char: 32\n`;
-          out += `\t${hex(maxChar - 32 + 1)}, // Number of chars: ${maxChar - 32 + 1}\n\n\t// Jump Table:\n`;
+          out += `\t${hex(minChar)}, // First Char: ${minChar}\n`;
+          out += `\t${hex(maxChar - minChar + 1)}, // Number of chars: ${maxChar - minChar + 1}\n\n\t// Jump Table:\n`;
 
           // -------- Overflow detection + Jump table build --------
           glyphs.forEach(g => {
