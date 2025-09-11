@@ -730,10 +730,9 @@ Copyright (c) 2016 by Fabrice Weinberg
             if (w > maxWidth) maxWidth = w;
           }
 
-
+          let maxChar = 255; // default max if no input
           const rangeInput = document.getElementById('charRange')?.value.trim();
           let selectedChars = null;
-          let maxChar = 255; // default max if no input
 
           if (rangeInput) {
             selectedChars = new Set();
@@ -819,7 +818,7 @@ Copyright (c) 2016 by Fabrice Weinberg
             const isBlank = g.bytes.every(b => b === 0);
             if (isBlank) {
               // Blank glyph marker
-              out += `\t0xFF, 0xFF, 0x00, ${hex(g.width)}, // ${g.code} ' ' (blank)\n`;
+              out += `\t0xFF, 0xFF, 0x00, ${hex(g.width)}, // ${g.code} '${String.fromCharCode(g.code)}' (blank)\n`;
             } else {
               if (g.bytes.length) {
                 if (g.bytes.length > 0xFF) {
@@ -1009,6 +1008,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
         warnings = [];
         let useUint16 = false;
+        console.log(chars.length)
         for (let ch = 0; ch < chars.length; ch++) {
           const table = chars[ch];
           const rows = table.getElementsByTagName('tr');
@@ -1054,7 +1054,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
             // Font data line
             dataLines.push(
-              `\t${charBytes.map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase()).join(', ')}, // ${charCode} '${String.fromCharCode(charCode)}'`
+              `\t${charBytes.map(b => '0x' + b.toString(16).padStart(2, '0').toUpperCase()).join(',')}, // ${charCode} '${String.fromCharCode(charCode)}'`
             );
 
             // Jump table line
@@ -1069,7 +1069,7 @@ Copyright (c) 2016 by Fabrice Weinberg
           } else {
             // empty glyph
             jumpLines.push(
-              `\t0xFF, 0xFF, 0x00, 0x${xAdvance.toString(16).padStart(2, '0').toUpperCase()}, // ${charCode} '${String.fromCharCode(charCode)}'`
+              `\t0xFF, 0xFF, 0x00, 0x${xAdvance.toString(16).padStart(2, '0').toUpperCase()}, // ${charCode} '${String.fromCharCode(charCode)}' (blank)`
             );
           }
         }
@@ -1084,7 +1084,7 @@ const ${type} ${name}[] PROGMEM = {
 \t0x${width.toString(16).padStart(2, '0').toUpperCase()}, // Width: ${width}
 \t0x${this.height.toString(16).padStart(2, '0').toUpperCase()}, // Height: ${this.height}
 \t0x${firstCharCode.toString(16).padStart(2, '0').toUpperCase()}, // First Char: ${firstCharCode}
-\t0x${chars.length.toString(16).padStart(2, '0').toUpperCase()}, // Number of chars
+\t0x${chars.length.toString(16).padStart(2, '0').toUpperCase()}, // Number of chars: ${chars.length}
 
 \t// Jump Table:
 ${jumpLines.join('\n')}
