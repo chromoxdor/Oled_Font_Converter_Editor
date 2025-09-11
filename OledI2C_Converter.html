@@ -93,7 +93,7 @@ Copyright (c) 2016 by Fabrice Weinberg
     }
 
     .buttonControls {
-      padding: 0 10px 5px 10px;
+      padding: 5px 10px 5px 10px;
       gap: 5px;
       display: flex;
     }
@@ -116,11 +116,11 @@ Copyright (c) 2016 by Fabrice Weinberg
       overflow-y: auto;
       flex-direction: row;
       flex-wrap: wrap;
-      border: 8px solid #97d3ef;
       height: fit-content;
       box-sizing: border-box;
       gap: 10px;
       align-content: flex-start;
+      padding: 10px;
     }
 
     #fButtons {
@@ -139,8 +139,9 @@ Copyright (c) 2016 by Fabrice Weinberg
       height: fit-content;
       padding: 4px;
       border-radius: 4px;
-      background: #f3f3f3;
+      background: #eceaea;
       cursor: default;
+      box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 1);
     }
 
     .glyph canvas {
@@ -496,25 +497,25 @@ Copyright (c) 2016 by Fabrice Weinberg
       const glyphsRect = glyphs.getBoundingClientRect();
 
       // Set the top of fButtons right below glyphs
-      fButtons.style.top = glyphsRect.bottom - 1 + 'px';
+      fButtons.style.top  = glyphsRect.bottom -1 + 'px';
 
       // Select all elements with class 'buttonBorder'
       const buttons = document.querySelectorAll('.buttonBorder');
       // Check if fButtons has reached the bottom of glyphs
-      if (glyphsRect.bottom - 1 == fButtons.getBoundingClientRect().top) {
-        fButtons.style.background = 'none';
-        buttons.forEach(btn => {
-          btn.style.border = '1px solid #767676';
-          btn.style.borderTop = 'none';
-
-        });
+      if (glyphsRect.bottom -1  == fButtons.getBoundingClientRect().top) {
+        //fButtons.style.background = 'none';
+        fButtons.style.boxShadow = '0px 11px 19px -9px #000000,0px 2px 20px -9px #000000';
+        fButtons.style.border = '1px solid #767676';
+        fButtons.style.borderTop = 'none';
+        glyphs.style.borderBottom = 'none';
+        glyphs.style.boxShadow = '';
+ 
       } else {
-        fButtons.style.background = '#97d3ef';
-        buttons.forEach(btn => {
-          // Remove the added border
-          btn.style.border = '';
-          btn.style.borderTop = '';
-        });
+        //fButtons.style.background = '#97d3ef';rgb(0, 0, 0) 0px 11px 19px -9px, rgb(0, 0, 0) 0px 2px 20px -9px
+        fButtons.style.border = '';
+        glyphs.style.boxShadow = '0px 0px 12px -2px #000000';
+        fButtons.style.boxShadow = '';
+
       }
     }
 
