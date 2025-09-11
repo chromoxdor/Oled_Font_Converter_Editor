@@ -68,6 +68,14 @@ Copyright (c) 2016 by Fabrice Weinberg
       min-width: 180px;
     }
 
+    #allSettings {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #767676;
+      border-radius: 5px;
+      width: fit-content;
+    }
+
     #settingWrapper {
       display: flex;
       flex-direction: row;
@@ -75,8 +83,16 @@ Copyright (c) 2016 by Fabrice Weinberg
       gap: 10px;
       width: 450px;
       padding: 10px;
-      border: 1px solid #767676;
-      border-radius: 5px;
+      border-bottom: 1px solid #767676;
+    }
+
+    #boldness {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 5px;
+      width: -webkit-fill-available;
+      border-bottom: 1px solid #767676;
     }
 
     .fontSettings {
@@ -316,6 +332,17 @@ Copyright (c) 2016 by Fabrice Weinberg
       width: 0;
       transition: 0.4s;
     }
+
+    #previewBtn {
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 2px;
+      width: fit-content;
+      font-size: 14px;
+      border: 1px solid #767676;
+      background: #efefef;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
@@ -338,7 +365,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         <input type="url" id="fontUrl" placeholder="https://example.com/font.ttf" style="width:100%; padding:4px;">
       </div>
     </div>
-    <div style="display:flex;flex-direction: column;">
+    <div id="allSettings">
       <div id="settingWrapper">
 
         <div id="basicFontOptions" class="fontSettings">
@@ -363,18 +390,37 @@ Copyright (c) 2016 by Fabrice Weinberg
             step="1">
         </div>
       </div>
-      <div style="display: flex;gap: 8px; align-items: center;padding: 8px;">
+      <div id="boldness">
         <label for="boldness">Boldness:</label>
 
         <input type="range" id="boldness" min="1" max="254" value="128" style="width:200px;" step="1">
         <span id="boldnessValue">128</span>
         <div><button id="resetBoldness" type="button">Reset</button></div>
       </div>
-      <div>
+      <div style="padding: 5px;">
         <label for="charRange">Convert chars (ranges):</label>
-        <input type="text" id="charRange" placeholder="e.g. 33-128 or 56,57,58,66-79">
+        <div style="display: flex;gap: 5px;align-items: center;">
+
+          <input type="text" id="charRange" placeholder="e.g. 33-128 or 56,57,58,66-79">
+          <label style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="remapChars"> Remap chars > #224 to start at #33
+          </label>
+        </div>
       </div>
     </div>
+    <!-- Input + button -->
+    <details id="previewBtn">
+      <summary>Preview</summary>
+      <div style="margin-top: 8px; display: flex; gap: 8px; flex-direction: column;">
+        <input type="text" id="previewText" value="Hello OLED!" style="width:200px;">
+        <!-- <button onclick="renderGlyphPreview()">Show Preview</button> -->
+
+        <!-- OLED preview window -->
+        <canvas id="previewCanvas" width="128" height="64" style="border:1px solid #333; image-rendering:pixelated;">
+      </div></canvas>
+    </details>
+
+
 
     <div style="display:flex;gap:5px;align-items: flex-start; padding-top: 10px;padding-bottom: 10px; ">
       <button id="loadFont" class="tiny">Load & Convert</button>
@@ -508,7 +554,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       // Select all elements with class 'buttonBorder'
       const buttons = document.querySelectorAll('.buttonBorder');
       // Check if fButtons has reached the bottom of glyphs
-      if (glyphsRect.bottom - 1 == fButtons.getBoundingClientRect().top) {
+      if (glyphsRect.bottom - 1 >= fButtons.getBoundingClientRect().top) {
         //fButtons.style.background = 'none';
         fButtons.style.boxShadow = '0px 11px 19px -9px #000000,0px 2px 20px -9px #000000';
         fButtons.style.border = '1px solid #767676';
@@ -526,11 +572,11 @@ Copyright (c) 2016 by Fabrice Weinberg
     }
 
     // Call it when glyphs is resized (using ResizeObserver)
-    const glyphs = document.getElementById('glyphsbox');
+    const glyphbox = document.getElementById('glyphsbox');
     const resizeObserver = new ResizeObserver(() => {
       adjustFButtonsPosition();
     });
-    resizeObserver.observe(glyphs);
+    resizeObserver.observe(glyphbox);
 
     // Also adjust on window scroll / resize
     window.addEventListener('resize', adjustFButtonsPosition);
@@ -538,6 +584,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
     const fontSizeInput = document.getElementById('fontSize');
     const extraTopInput = document.getElementById('extraTop');
+    const previewText = document.getElementById('previewText');
 
     // enforce fontSize between 2 and 200
     fontSizeInput.addEventListener('input', () => {
@@ -555,6 +602,10 @@ Copyright (c) 2016 by Fabrice Weinberg
       if (val < -100) extraTopInput.value = -100;
     });
 
+    previewText.addEventListener('input', () => {
+      renderGlyphPreview();
+    });
+
     function jumpToChar(code) {
       const el = document.getElementById(`char-${code}`);
       if (el) {
@@ -565,19 +616,84 @@ Copyright (c) 2016 by Fabrice Weinberg
         alert(`Char ${code} not found`);
       }
     }
+
     function openGlyphTable() {
       document.getElementById('glyphsbox').style.border = "1px solid #767676";
       let glyphsHeight = document.getElementById('glyphs').offsetHeight;
       document.getElementById('glyphsbox').style.height = Math.min(glyphsHeight, 300) + "px";
     }
 
+
+    // Draw ONE glyph at given x/y inside previewCanvas
+    function drawGlyphOnCanvas(ctx, glyph, x, y, scale = 1) {
+      ctx.fillStyle = 'white';
+      for (let gx = 0; gx < glyph.width; gx++) {
+        for (let gy = 0; gy < glyph.height; gy++) {
+          const yBlock = Math.floor(gy / 8);
+          const bit = gy % 8;
+          const idx = gx * glyph.arrayHeight + yBlock;
+          if (glyph.bytes[idx] & (1 << bit)) {
+            ctx.fillRect(x + gx * scale, y + gy * scale, scale, scale);
+          }
+        }
+      }
+    }
+
+    // Render preview text into 128x64 canvas
+    function renderGlyphPreview() {
+      const canvas = document.getElementById('previewCanvas');
+      const ctx = canvas.getContext('2d');
+      const text = document.getElementById('previewText').value;
+
+      // Clear OLED area
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Safety: check glyphs is an array
+      if (!Array.isArray(glyphs) || glyphs.length === 0) {
+        console.warn("No glyphs available to render preview.");
+        return;
+      }
+
+      let cursorX = 2;   // left padding
+      let cursorY = 2;   // top padding
+      const lineHeight = glyphs[0].height || 12;
+      const scale = 1;
+
+      for (let ch of text) {
+        const code = ch.charCodeAt(0);
+        const glyph = glyphs.find(g => g.code === code);
+
+        if (!glyph) continue; // skip if char not in glyphs
+
+        // Wrap line if width exceeded
+        if (cursorX + glyph.width > canvas.width) {
+          cursorX = 2;
+          cursorY += lineHeight + 1;
+        }
+        console.log(glyph);
+        drawGlyphOnCanvas(ctx, glyph, cursorX, cursorY, scale);
+
+        cursorX += glyph.width + 1;
+      }
+    }
+
+
+
+    var glyphs = []; // global
+    let fontFace, fontName = 'MyFont';
+    let fontSize = 20, extraTop = 0, extraWidth = 0, extraBottom = 0;
+    let pixelThreshold = 128;
+
+
     /* ---------------- Converter code ---------------- */
     (async () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      let glyphs = [], fontFace, fontName = 'MyFont';
-      let fontSize = 20, extraTop = 0, extraWidth = 0, extraBottom = 0;
-      let pixelThreshold = 128;
+      //let glyphs = [], fontFace, fontName = 'MyFont';
+      //let fontSize = 20, extraTop = 0, extraWidth = 0, extraBottom = 0;
+      //let pixelThreshold = 128;
+      glyphs = [];
 
       // Input elements
       const fontSizeInput = document.getElementById('fontSize');
@@ -639,7 +755,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         glyphs.forEach(g => {
           const div = document.createElement('div');
           div.className = 'glyph';
-          div.id = `#${g.code}`;
+          //div.id = `#${g.code}`;
 
           const c = document.createElement('canvas');
           c.width = g.width * scale;   // scale width
@@ -737,23 +853,33 @@ Copyright (c) 2016 by Fabrice Weinberg
             if (w > maxWidth) maxWidth = w;
           }
 
-          let maxChar = 255; // default max if no input
-          let minChar = 32;  // default min
-          const rangeInput = document.getElementById('charRange')?.value.trim();
+          // -------------------------------
+          // Parse char range input
+          // -------------------------------
+
+          // Defaults if no range is given
+          let minChar = 32;
+          let maxChar = 255;
           let selectedChars = null;
+
+          // Get range string
+          const rangeInput = document.getElementById('charRange')?.value.trim();
+          const remap = document.getElementById('remapChars')?.checked; // checkbox option
 
           if (rangeInput) {
             selectedChars = new Set();
-            maxChar = 32;      // reset for range calculation
-            minChar = Infinity; // track the lowest valid char
+            maxChar = 32;
+            minChar = Infinity;
             let minInvalidChar = Infinity;
 
+            // --- Parse each part of the range string ---
             rangeInput.split(',').map(s => s.trim()).forEach(part => {
               if (part.includes('-')) {
+                // Handle ranges like "40-55"
                 const [start, end] = part.split('-').map(Number);
                 if (!isNaN(start) && !isNaN(end) && start <= end) {
                   for (let i = start; i <= end; i++) {
-                    if (i >= 32) { // ignore below 32
+                    if (i >= 32) {
                       selectedChars.add(i);
                       if (i > maxChar) maxChar = i;
                       if (i < minChar) minChar = i;
@@ -763,6 +889,7 @@ Copyright (c) 2016 by Fabrice Weinberg
                   }
                 }
               } else {
+                // Handle single values like "57"
                 const n = Number(part);
                 if (!isNaN(n)) {
                   if (n >= 32) {
@@ -776,32 +903,80 @@ Copyright (c) 2016 by Fabrice Weinberg
               }
             });
 
+            // --- Warnings ---
             if (minInvalidChar < 32) {
               alert(`Warning: characters below 32 are ignored (minimum char is 32).`);
             }
+            if (maxChar > 255 && !remap) {
+              alert(`Warning: Library needs to be adjusted for characters above 224 (use uint16_t).`);
+            }
 
-            // if only invalid chars were entered
+            // --- Handle case: only invalid chars entered ---
             if (minChar === Infinity) {
               minChar = 32;
               maxChar = 255;
               selectedChars = null;
             }
+
+            // --- Optional: remap mode ---
+            if (remap && selectedChars && selectedChars.size > 0) {
+              const sorted = [...selectedChars].sort((a, b) => a - b);
+              const remapMap = new Map();
+              let newCode = 33;
+
+              sorted.forEach(oldCode => {
+                if (oldCode === 32) {
+                  // keep space untouched
+                  remapMap.set(32, 32);
+                } else {
+                  remapMap.set(oldCode, newCode++);
+                }
+              });
+
+              // Replace char set with remapped values
+              selectedChars = new Set(remapMap.values());
+
+              // If 32 was included, keep it as minChar, otherwise start at 33
+              minChar = remapMap.has(32) ? 32 : 33;
+              maxChar = newCode - 1;
+
+              // Store mapping globally for later (e.g. jump table comments)
+              window.charRemap = remapMap;
+            } else {
+              window.charRemap = null;
+            }
+
           } else {
-            minChar = 32;  // no input → normal full range
+            // --- No range input: full default range ---
+            minChar = 32;
             maxChar = 255;
           }
 
-          // -------- Generate glyphs --------
+
+          // -------------------------------
+          // Generate glyphs
+          // -------------------------------
           glyphs = [];
+
           for (let code = minChar; code <= maxChar; code++) {
-            const ch = String.fromCharCode(code);
+            let originalCode = code;
+
+            // Reverse-lookup original code if remapped
+            if (window.charRemap) {
+              const entry = [...window.charRemap.entries()].find(([oldC, newC]) => newC === code);
+              if (!entry) continue; // skip holes
+              originalCode = entry[0];
+            }
+
+            const ch = String.fromCharCode(originalCode);
             const w = Math.max(1, Math.ceil(ctx.measureText(ch).width) + extraWidth);
 
             if (!selectedChars || selectedChars.has(code)) {
               const img = drawGlyph(ch, w, maxHeight);
               const bytes = convertToBytes(img, w, maxHeight, pixelThreshold);
               glyphs.push({
-                code,
+                code,          // final code (possibly remapped)
+                originalCode,  // actual Unicode char code
                 bytes: bytes.length ? bytes : new Array(Math.ceil(maxHeight / 8) * w).fill(0),
                 width: w,
                 height: maxHeight,
@@ -811,6 +986,7 @@ Copyright (c) 2016 by Fabrice Weinberg
               // Not in range → blank glyph
               glyphs.push({
                 code,
+                originalCode,
                 bytes: new Array(Math.ceil(maxHeight / 8) * w).fill(0),
                 width: w,
                 height: maxHeight,
@@ -820,6 +996,8 @@ Copyright (c) 2016 by Fabrice Weinberg
           }
           renderGlyphs();
           openGlyphTable();
+          renderGlyphPreview();
+
 
           let jumpOffset = 0;
           let warnings = [];
@@ -1141,7 +1319,7 @@ ${dataLines.join('\n')}
       };
 
       FontEditor.prototype.toGlyphs = function () {
-        const glyphs = [];
+        glyphs = [];
         const tables = this.fontContainer.getElementsByTagName('table');
 
         for (let i = 0; i < tables.length; i++) {
@@ -1168,10 +1346,13 @@ ${dataLines.join('\n')}
             }
             if (bitIdx > 0) bytes.push(colBits); // remaining bits
           }
-
+          // Use xAdvance if available
+          let xAdvance = this.width;
+          const jDat = this.fontContainer.children[i];
+          if (jDat?.jumpData?.length >= 4) xAdvance = jDat.jumpData[3];
           glyphs.push({
             code: i + parseInt(document.getElementById('code').value),
-            width: this.width,
+            width: xAdvance,
             height: this.height,
             arrayHeight: this.bytesForHeight,
             bytes: bytes
@@ -1183,19 +1364,14 @@ ${dataLines.join('\n')}
       FontEditor.prototype.renderGlyphs = function (scale = 3) {
         const container = document.getElementById('glyphs');
         container.innerHTML = '';
-        const glyphs = this.toGlyphs(); // uses the editor grid
+        glyphs = this.toGlyphs(); // uses the editor grid
 
         glyphs.forEach((g, i) => {
           const div = document.createElement('div');
           div.className = 'glyph';
-
-          // Use xAdvance if available
-          let xAdvance = this.width;
-          const tbl = this.fontContainer.children[i];
-          if (tbl?.jumpData?.length >= 4) xAdvance = tbl.jumpData[3];
-
+          console.log(g);
           const c = document.createElement('canvas');
-          c.width = xAdvance * scale;
+          c.width = g.width * scale;
           c.height = g.height * scale;
           const ctx = c.getContext('2d');
 
@@ -1205,7 +1381,7 @@ ${dataLines.join('\n')}
 
           // Draw pixels
           ctx.fillStyle = 'black';
-          for (let x = 0; x < xAdvance; x++) {
+          for (let x = 0; x < g.width; x++) {
             for (let y = 0; y < g.height; y++) {
               const yBlock = Math.floor(y / 8);
               const bit = y % 8;
