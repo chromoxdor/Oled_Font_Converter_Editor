@@ -15,7 +15,7 @@ A mashup of a [font converter](https://oleddisplay.squix.ch/) and a [glyph edito
 ![oled adj](https://github.com/user-attachments/assets/f4ead09f-dae1-49ff-bb49-2efa0b79932e)
 
 
-### Sample Glyphs
+### Character mapping
 | Cyrillic | Arabic |
 |----------|--------|
 | ![kyr](https://github.com/user-attachments/assets/f56a4d23-5df0-4f9b-93ca-2738537915e7) | ![arb](https://github.com/user-attachments/assets/b073bae1-bdaf-43f8-9ff6-94cdf4b90e48) |
