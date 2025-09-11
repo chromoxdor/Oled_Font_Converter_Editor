@@ -86,7 +86,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       border-bottom: 1px solid #767676;
     }
 
-    #boldness {
+    #boldnessWrap {
       display: flex;
       gap: 8px;
       align-items: center;
@@ -390,7 +390,7 @@ Copyright (c) 2016 by Fabrice Weinberg
             step="1">
         </div>
       </div>
-      <div id="boldness">
+      <div id="boldnessWrap">
         <label for="boldness">Boldness:</label>
 
         <input type="range" id="boldness" min="1" max="254" value="128" style="width:200px;" step="1">
@@ -655,8 +655,8 @@ Copyright (c) 2016 by Fabrice Weinberg
         return;
       }
 
-      let cursorX = 2;   // left padding
-      let cursorY = 2;   // top padding
+      let cursorX = -2;   // left padding
+      let cursorY = 0;   // top padding
       const lineHeight = glyphs[0].height || 12;
       const scale = 1;
 
@@ -667,7 +667,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         if (!glyph) continue; // skip if char not in glyphs
 
         // Wrap line if width exceeded
-        if (cursorX + glyph.width > canvas.width) {
+        if (cursorX + glyph.width > canvas.width+4) {
           cursorX = 2;
           cursorY += lineHeight + 1;
         }
@@ -1455,7 +1455,8 @@ ${dataLines.join('\n')}
           srollToEditor();
           hideOverlay();
         }
-        getGlyphs()
+        getGlyphs();
+        renderGlyphPreview();
       }
 
       document.getElementById('create').addEventListener('click', () => {
