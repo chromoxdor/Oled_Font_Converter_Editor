@@ -18,6 +18,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
 <!DOCTYPE html>
 <html lang="en">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
 <head>
   <meta charset="utf-8">
@@ -280,14 +281,19 @@ Copyright (c) 2016 by Fabrice Weinberg
 
     #overlayContent {
       padding: 20px 30px;
-      font-size: 18px;
+      font-size: 12px;
       font-weight: bold;
       color: red;
       text-align: center;
-      border: 2px solid red;
-      border-radius: 8px;
+      /*border: 2px solid red;*/
+      /*border-radius: 8px;*/
       background: #fff;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      font-family: 'Press Start 2P', monospace;
+      line-height: 1.2;
+      letter-spacing: 0.05em;
+      /* make letters distinct */
+      box-shadow: 0 0 0 4px red, 8px 0 0 0 red, -8px 0px 0 0 red, 0px 8px 0 0 red, 0px -8px 0 0 red;
     }
 
     #overlayWarning {
@@ -497,19 +503,19 @@ Copyright (c) 2016 by Fabrice Weinberg
       const glyphsRect = glyphs.getBoundingClientRect();
 
       // Set the top of fButtons right below glyphs
-      fButtons.style.top  = glyphsRect.bottom -1 + 'px';
+      fButtons.style.top = glyphsRect.bottom - 1 + 'px';
 
       // Select all elements with class 'buttonBorder'
       const buttons = document.querySelectorAll('.buttonBorder');
       // Check if fButtons has reached the bottom of glyphs
-      if (glyphsRect.bottom -1  == fButtons.getBoundingClientRect().top) {
+      if (glyphsRect.bottom - 1 == fButtons.getBoundingClientRect().top) {
         //fButtons.style.background = 'none';
         fButtons.style.boxShadow = '0px 11px 19px -9px #000000,0px 2px 20px -9px #000000';
         fButtons.style.border = '1px solid #767676';
         fButtons.style.borderTop = 'none';
         glyphs.style.borderBottom = 'none';
         glyphs.style.boxShadow = '';
- 
+
       } else {
         //fButtons.style.background = '#97d3ef';rgb(0, 0, 0) 0px 11px 19px -9px, rgb(0, 0, 0) 0px 2px 20px -9px
         fButtons.style.border = '';
