@@ -8,8 +8,8 @@ A mashup of a [font converter](https://oleddisplay.squix.ch/) and a [glyph edito
 
 ---
 
-![fesit2](https://github.com/user-attachments/assets/5736e6d3-3b1f-44ef-a376-8be81c5b7792)
 
+<img width="900" height="1095" alt="fedit3" src="https://github.com/user-attachments/assets/d6b2c2f9-4bf0-4bac-8c80-ab152b01e96b" />
 
 ### Exact adjustments for your screen.
 ![oled adj](https://github.com/user-attachments/assets/f4ead09f-dae1-49ff-bb49-2efa0b79932e)
