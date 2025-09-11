@@ -495,7 +495,6 @@ Copyright (c) 2016 by Fabrice Weinberg
 
       // Select all elements with class 'buttonBorder'
       const buttons = document.querySelectorAll('.buttonBorder');
-      console.log(glyphsRect.bottom, fButtons.getBoundingClientRect().top)
       // Check if fButtons has reached the bottom of glyphs
       if (glyphsRect.bottom - 1 == fButtons.getBoundingClientRect().top) {
         fButtons.style.background = 'none';
@@ -935,7 +934,6 @@ Copyright (c) 2016 by Fabrice Weinberg
 
       let warnings = [];
       FontEditor.prototype.generate = function () {
-        console.log("test");
         const outputEl = document.getElementById('output');
         const chars = this.fontContainer.getElementsByTagName('table');
         const firstCharCode = parseInt(document.getElementById('code').value);
@@ -950,7 +948,6 @@ Copyright (c) 2016 by Fabrice Weinberg
 
         warnings = [];
         let useUint16 = false;
-        console.log("test");
         for (let ch = 0; ch < chars.length; ch++) {
           const table = chars[ch];
           const rows = table.getElementsByTagName('tr');
@@ -984,7 +981,6 @@ Copyright (c) 2016 by Fabrice Weinberg
           while (charBytes.length > 1 && charBytes[charBytes.length - 1] === 0) charBytes.pop();
 
           const charCode = ch + firstCharCode;
-          console.log("test", charBytes.length);
           if (notZero) {
             // Check overflow for jump table / byte length
             if (charBytes.length > 0xFF) {
@@ -1498,7 +1494,6 @@ ${dataLines.join('\n')}
           document.getElementById('generate').style.visibility = 'hidden';
           document.getElementById('generate').style.pointerEvents = 'none';
           clearTimeout(generateTimer);
-          console.log('Schedule generateF in 1.5s');
 
           generateTimer = setTimeout(() => {
             if (!isMouseDown) {
