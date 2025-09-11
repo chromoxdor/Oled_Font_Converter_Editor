@@ -5,9 +5,7 @@ If you like my work consider a donation: [![donate](https://img.shields.io/badge
 ### a mashup of a [font converter](https://oleddisplay.squix.ch/) and a [glyph editor](https://rawgit.com/lorol/esp8266-oled-ssd1306/master/resources/glyphEditor.html)
  visit: https://raw.githack.com/chromoxdor/Oled_Font_Converter_Editor/main/OledI2C_Converter.html
 
-
- 
-<img width="900" height="937" alt="fonteditor" src="https://github.com/user-attachments/assets/2b8432d6-6597-45f1-a1b7-f4d5f3ec59a0" />
+<img width="900" height="835" alt="fontedit" src="https://github.com/user-attachments/assets/6f28ed1e-b369-45b0-a870-6eb49759cd38" />
 <img width="450" height="622" alt="kyr" src="https://github.com/user-attachments/assets/f56a4d23-5df0-4f9b-93ca-2738537915e7" />
 <img width="450" height="622" alt="arb" src="https://github.com/user-attachments/assets/b073bae1-bdaf-43f8-9ff6-94cdf4b90e48" />
 
