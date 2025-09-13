@@ -68,15 +68,16 @@ Copyright (c) 2016 by Fabrice Weinberg
       min-width: 180px;
     }
 
-    #allSettings {
+    .allSettings {
       display: flex;
       flex-direction: column;
       border: 1px solid #767676;
       border-radius: 5px;
       width: fit-content;
+      align-items: flex-start;
     }
 
-    #settingWrapper {
+    .settingWrapper {
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -156,7 +157,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       height: fit-content;
       padding: 4px;
       border-radius: 4px;
-      background: #eceaea;
+      /*background: #eceaea;*/
       cursor: default;
       box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 1);
     }
@@ -343,6 +344,11 @@ Copyright (c) 2016 by Fabrice Weinberg
       background: #efefef;
       margin-top: 10px;
     }
+
+    button {
+      border: 1px solid #767676;
+      background: #efefef;
+    }
   </style>
 </head>
 
@@ -365,8 +371,8 @@ Copyright (c) 2016 by Fabrice Weinberg
         <input type="url" id="fontUrl" placeholder="https://example.com/font.ttf" style="width:100%; padding:4px;">
       </div>
     </div>
-    <div id="allSettings">
-      <div id="settingWrapper">
+    <div class="allSettings">
+      <div class="settingWrapper">
 
         <div id="basicFontOptions" class="fontSettings">
           <label for="fontSize" style="text-align:left;">Font size (px):</label>
@@ -439,11 +445,8 @@ Copyright (c) 2016 by Fabrice Weinberg
       <div style="display: flex; gap: 5px;">
         <div class="buttonControls buttonBorder">
           <button id="parse" class="tiny">Edit Font</button>
-          <button id="generate" class="tiny">Update Font (q)</button>
+          <button id="generate" class="tiny">Update Code (q)</button>
         </div>
-        <label id=live class="tiny buttonBorder">
-          <input type="checkbox" id="liveUpdate">
-          Live update (best for small fonts <= 20px) </label>
       </div>
       <div class="buttonControls buttonBorder">
         <button id="downloadH" class="tiny">Save to File</button>
@@ -456,68 +459,71 @@ Copyright (c) 2016 by Fabrice Weinberg
       <h2>Glyph Editor</h2>
       <div id="editorForm">
         <div style="display: flex;justify-content: flex-start;">
-          <div>
-            <table>
-              <tr>
-                <td style="width:160px">Font array name:</td>
-                <td><input type="text" id="name" placeholder="My_Font" style="width:160px"></td>
-                <td rowspan="4" style="width:48%"><!-- shared textarea is above; editor uses it --></td>
-              </tr>
-              <tr>
-                <td>First char code:</td>
-                <td><input type="number" id="code" value="32" style="width:160px"></td>
-              </tr>
-              <tr>
-                <td>Width (adjustable):</td>
-                <td><input type="number" id="width" class="editable" value="" style="width:160px" step="1"></td>
-              </tr>
-              <tr>
-                <td>Height:</td>
-                <td><input type="number" id="height" value="" style="width:160px" max="64" readonly></td>
-              </tr>
-            </table>
-          </div>
-          <!-- Help table -->
-          <div>
-            <table id="help" style="color:#666;font-size: 10px; border-collapse: collapse; width: 100%;">
-              <colgroup>
-                <col style="width: 30px; text-align: right;">
-                <col>
-              </colgroup>
-              <tr>
-                <td colspan="2">Draw / erase char pixels by mouse click and drag</td>
-              </tr>
-              <tr>
-                <td colspan="2">Press 'q' to update the font manually</td>
-              </tr>
-              <tr>
-                <td>✗</td>
-                <td>Delete this char</td>
-              </tr>
-              <tr>
-                <td>←↓↑→</td>
-                <td>Move all pixels</td>
-              </tr>
-              <tr>
-                <td>(</td>
-                <td>Extend occupied width</td>
-              </tr>
-              <tr>
-                <td>)</td>
-                <td>Reduce occupied width</td>
-              </tr>
-              <tr>
-                <td>I</td>
-                <td>Import all pixels from another char</td>
-              </tr>
-              <tr>
-                <td>C</td>
-                <td>Clean all pixels of current char</td>
-              </tr>
-              <tr>
-                <td colspan="2">"Add a character" button: Add new char at the end</td>
-              </tr>
-            </table>
+
+          <div class="allSettings">
+
+            <label for="name" style="text-align:left;">Font array name:</label>
+            <input type="text" id="name" placeholder="My_Font" style="width:300px;">
+            <div class="settingWrapper">
+
+              <div id="fontSizeOptions" class="fontSettings">
+                <label for="width" style="text-align:left;">Width (adjustable):</label>
+                <input type="number" id="width" class="editable" value="" style="width:50px;" step="1">
+
+                <label for="height" style="text-align:left;">Height:</label>
+                <input type="number" id="height" value="" style="width:50px;" max="64" readonly>
+              </div>
+
+              <div id="fontMetaOptions" class="fontSettings">
+                <label for="code" style="text-align:left;">First char code:</label>
+                <input type="number" id="code" value="32" style="width:50px;" step="1">
+              </div>
+              <br>
+
+
+            </div>
+
+            <!-- Help table -->
+            <div>
+              <table id="help" style="color:#666; font-size:10px; border-collapse:collapse; width:100%;">
+                <colgroup>
+                  <col style="width:30px; text-align:right;">
+                  <col style="width:50%;">
+                  <col style="width:30px; text-align:right;">
+                  <col style="width:50%;">
+                </colgroup>
+                <tr>
+                  <td colspan="4" style="text-align:center; font-weight:bold; padding:4px 0;">Editor Shortcuts</td>
+                </tr>
+                <tr>
+                  <td colspan="4">Draw / erase char pixels by mouse click and drag</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#000; font-weight:bold; font-size:12px;">i</span></td>
+                  <td>Press key to invert the font</td>
+                  <td><span style="color:#000; font-weight:bold; font-size:12px;">p</span></td>
+                  <td>Press key to update the font manually</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#b00; font-weight:bold; font-size:12px;">✗</span></td>
+                  <td>Delete this char</td>
+                  <td><span style="color:#06c; font-weight:bold; font-size:12px;">←↓↑→</span></td>
+                  <td>Move all pixels</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#06c; font-weight:bold; font-size:12px;">(</span></td>
+                  <td>Extend occupied width</td>
+                  <td><span style="color:#06c; font-weight:bold; font-size:12px;">)</span></td>
+                  <td>Reduce occupied width</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#0a0; font-weight:bold; font-size:12px;">I</span></td>
+                  <td>Import all pixels from another char</td>
+                  <td><span style="color:#a50; font-weight:bold; font-size:12px;">C</span></td>
+                  <td>Clean all pixels of current char</td>
+                </tr>
+              </table>
+            </div>
           </div>
         </div>
         <!-- <div id="editorControls">
@@ -526,6 +532,16 @@ Copyright (c) 2016 by Fabrice Weinberg
         <button id="create" class="tiny">Create New</button>
         <span style="color:#666;font-size:12px;">(Use Parse to import the shared font data above)</span>
       </div> -->
+      </div>
+      <div id="bulk-actions" style="margin:10px 0; display:flex; gap:6px; flex-wrap:wrap;">
+        <button onclick="applyActionToAll('delete')">🗑 Delete</button>
+        <button onclick="applyActionToAll('tight')">↔️ Tight</button>
+        <button onclick="applyActionToAll('left')">⬅ Left</button>
+        <button onclick="applyActionToAll('up')">⬆ Up</button>
+        <button onclick="applyActionToAll('down')">⬇ Down</button>
+        <button onclick="applyActionToAll('right')">➡ Right</button>
+        <button onclick="applyActionToAll('release')">↔️ Release</button>
+        <button onclick="invertChars()">Invert (i)</button>
       </div>
 
       <div id="chars" role="application" aria-label="Glyph editor grids"></div>
@@ -661,7 +677,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         if (ch === '\n') {
           // Handle new line
           cursorX = 2;
-          cursorY += lineHeight + 1;
+          cursorY += lineHeight;
           continue;
         }
 
@@ -673,24 +689,30 @@ Copyright (c) 2016 by Fabrice Weinberg
         // Wrap line if width exceeded
         if (cursorX + glyph.width > canvas.width) {
           cursorX = 2;
-          cursorY += lineHeight + 1;
+          cursorY += lineHeight;
         }
 
         drawGlyphOnCanvas(ctx, glyph, cursorX, cursorY, scale);
 
-        cursorX += glyph.width + 1;
+        cursorX += glyph.width;
+      }
+      const highlightChar = document.getElementById("p" + highChar)
+      if (highlightChar) {
+        document.getElementById("p" + highChar).style.background = "#ffc000";
       }
     }
-
-
 
     var glyphs = []; // global
     let fontFace, fontName = 'MyFont';
     let fontSize = 20, extraTop = 0, extraWidth = 0, extraBottom = 0;
     let pixelThreshold = 128;
+    var highChar = 0;
 
 
-    /* ---------------- Converter code ---------------- */
+
+    //----------------------------------------------------------------------------------------------
+    //                                                                                Converter code 
+    //----------------------------------------------------------------------------------------------
     (async () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -759,7 +781,7 @@ Copyright (c) 2016 by Fabrice Weinberg
         glyphs.forEach(g => {
           const div = document.createElement('div');
           div.className = 'glyph';
-          //div.id = `#${g.code}`;
+          div.id = `p${g.code}`;
 
           const c = document.createElement('canvas');
           c.width = g.width * scale;   // scale width
@@ -1103,7 +1125,11 @@ Copyright (c) 2016 by Fabrice Weinberg
       });
     })();
 
-    /* ---------------- Glyph editor (parser + grid) ---------------- */
+
+
+    //----------------------------------------------------------------------------------------------
+    //                                                                                  Glyph editor
+    //----------------------------------------------------------------------------------------------
     (function () {
       let editorFont = null, isMouseDown = false, paintState = null;
 
@@ -1372,8 +1398,8 @@ ${dataLines.join('\n')}
 
         glyphs.forEach((g, i) => {
           const div = document.createElement('div');
+          div.id = `p${g.code}`;
           div.className = 'glyph';
-          console.log(g);
           const c = document.createElement('canvas');
           c.width = g.width * scale;
           c.height = g.height * scale;
@@ -1411,11 +1437,12 @@ ${dataLines.join('\n')}
         pendingGeneration();
         setTimeout(() => {
           parseFont(true);
+          document.getElementById('generate').style.visibility = 'visible';
+          document.getElementById('generate').style.pointerEvents = 'auto';
         }, 50); // 50ms is enough for repaint
       });
 
       function parseFont(bPressed = false) {
-
         const txt = document.getElementById('output').value || '';
         if (!txt.trim()) { alert('Shared output is empty'); hideOverlay(); return; }
         const cleaned = txt.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1').trim();
@@ -1454,13 +1481,16 @@ ${dataLines.join('\n')}
           }
           editorFont.addChar(je, chBytes);
         }
-        editorFont.renderGlyphs(3); // 2x scale
+
         if (bPressed) {
           srollToEditor();
           hideOverlay();
+          editorFont.renderGlyphs(3); // 2x scale
+          getGlyphs();
+          renderGlyphPreview();
         }
-        getGlyphs();
-        renderGlyphPreview();
+
+        document.getElementById('generate').style.border = '1px solid #767676';
       }
 
       document.getElementById('create').addEventListener('click', () => {
@@ -1493,12 +1523,12 @@ ${dataLines.join('\n')}
       });
 
       document.getElementById('generate').addEventListener('click', () => {
-        document.getElementById('generate').style.visibility = 'hidden';
-        document.getElementById('generate').style.pointerEvents = 'none';
+        //document.getElementById('generate').style.visibility = 'hidden';
         generateF();
       });
 
       function generateF() {
+
         if (!editorFont) {
           alert('No font in editor');
           return;
@@ -1530,6 +1560,24 @@ ${dataLines.join('\n')}
         overlay.style.display = 'none';
       }
 
+      function invertChars() {
+        // Select all character blocks
+        document.querySelectorAll('.char-item').forEach(charItem => {
+          // For each TD inside this char block
+          charItem.querySelectorAll('td[action="toggle"]').forEach(td => {
+            if (td.classList.contains('out')) {
+              // Do nothing for "out"
+              return;
+            } else if (td.classList.contains('on')) {
+              // If it's on, turn it off
+              td.classList.remove('on');
+            } else {
+              // If it's empty, turn it on
+              td.classList.add('on');
+            }
+          });
+        });
+      }
 
       document.getElementById('addCharBottom').addEventListener('click', () => { if (editorFont) editorFont.addChar(); waitforGenerateF(); });
       document.getElementById('width').addEventListener('input', function () {
@@ -1560,7 +1608,12 @@ ${dataLines.join('\n')}
           event.preventDefault(); // stop typing 'u' into inputs
           generateF();
         }
+        if (event.key === "i") {
+          event.preventDefault(); // stop typing 'i' into inputs
+          invertChars();
+        }
       });
+
       function getGlyphs() {
         document.querySelectorAll('.glyph').forEach(glyphDiv => {
           glyphDiv.style.cursor = 'pointer'; // indicate clickable
@@ -1578,12 +1631,125 @@ ${dataLines.join('\n')}
         });
       }
 
+      function applyActionToAll(action) {
+        // find all char-item tables
+        const tables = document.querySelectorAll('.char-item table');
+
+        tables.forEach(table => {
+          const wrapper = table.closest('.char-item');
+          const pixels = table.getElementsByTagName('td');
+
+          switch (action) {
+            case 'delete': {
+              const pixels = wrapper.querySelectorAll('td');
+              pixels.forEach(cell => cell.className = 'out');
+              if (wrapper.jumpData) wrapper.jumpData[3] = 0;
+              const cap = wrapper.querySelector('caption');
+              if (cap) cap.textContent = `${cap.textContent.split(' ')[0]} (empty)`;
+            } break;
+
+            case 'left': {
+              for (let p = 0; p < pixels.length; p++) {
+                if ((p + 1) % editorFont.width) {
+                  pixels[p].className = pixels[p + 1].className;
+                } else pixels[p].className = 'out';
+              }
+            } break;
+
+            case 'right': {
+              for (let p = pixels.length - 1; p >= 0; p--) {
+                if (p % editorFont.width) {
+                  pixels[p].className = pixels[p - 1].className;
+                } else pixels[p].className = '';
+              }
+            } break;
+
+            case 'up': {
+              for (let p = 0; p < pixels.length; p++) {
+                if (p < editorFont.width * (editorFont.height - 1)) {
+                  pixels[p].className = pixels[p + editorFont.width].className;
+                } else {
+                  pixels[p].className = pixels[p].classList.contains('out') ? 'out' : '';
+                }
+              }
+            } break;
+
+            case 'down': {
+              for (let p = pixels.length - 1; p >= 0; p--) {
+                if (p >= editorFont.width) {
+                  pixels[p].className = pixels[p - editorFont.width].className;
+                } else {
+                  pixels[p].className = pixels[p].classList.contains('out') ? 'out' : '';
+                }
+              }
+            } break;
+
+            case 'tight':
+            case 'release': {
+              if (action === 'tight') {
+                for (let p = 0; p < pixels.length; p++) {
+                  if ((p + 1) % editorFont.width) {
+                    if (pixels[p + 1].classList.contains('out')) pixels[p].classList.add('out');
+                  } else pixels[p].classList.add('out');
+                }
+              } else {
+                for (let p = pixels.length - 1; p >= 0; p--) {
+                  if ((p % editorFont.width) && pixels[p].classList.contains('out') && !pixels[p - 1].classList.contains('out')) {
+                    pixels[p].className = '';
+                  }
+                }
+              }
+              if (!table.jumpData) table.jumpData = [0, 0, 0, editorFont.width];
+              let xAdv = 0;
+              for (let col = 0; col < editorFont.width; col++) {
+                for (let row = 0; row < editorFont.height; row++) {
+                  const cell = pixels[row * editorFont.width + col];
+                  if (cell && !cell.classList.contains('out')) xAdv = col + 1;
+                }
+              }
+              table.jumpData[3] = xAdv;
+            } break;
+          }
+        });
+
+        // Refresh preview after all edits
+        editorFont.renderGlyphs(3);
+      }
+
+      function scrollToPrevChar(e) {
+        const charItem = e.target.closest(".char-item");
+        if (!charItem) return;
+
+        const caption = charItem.querySelector("caption[id^='char-']");
+        if (!caption) return;
+
+        const match = caption.id.match(/^char-(\d+)$/);
+        if (!match) return;
+
+        const charNum = match[1];
+        highChar = charNum; // update global variable
+        const scrollTarget = document.getElementById("p" + charNum);
+
+        if (scrollTarget) {
+          const scrollContainer = document.getElementById("glyphsbox");
+
+          // Scroll to center
+          scrollContainer.scrollTo({
+            top: scrollTarget.offsetTop - scrollContainer.clientHeight / 2 + scrollTarget.clientHeight / 2,
+            behavior: "smooth"
+          });
+        }
+      }
+
+      window.applyActionToAll = applyActionToAll;
+      window.invertChars = invertChars;
+
       /* ---------------- Interaction: click, hold & drag, actions ---------------- */
 
       // pointerdown handles both toggling pixels and action buttons
       document.getElementById('chars').addEventListener('pointerdown', function (e) {
         if (e.button !== 0) return; // left button only
-
+        scrollToPrevChar(e);
         const target = e.target.closest('td[action="toggle"], th[action]');
         if (!target) return;
         waitforGenerateF()
@@ -1689,7 +1855,7 @@ ${dataLines.join('\n')}
               //waitforGenerateF();
               break;
             case 'clean':
-              if (confirm('Delete the pixels ?')) {
+              if (confirm('Fill the char with empty pixel?')) {
                 // 1. Clear editor table UI
                 for (let p = 0; p < pixels.length; p++) {
                   pixels[p].className = '';
@@ -1750,7 +1916,15 @@ ${dataLines.join('\n')}
           if (!cell.classList.contains('out')) cell.classList.toggle('on', paintState);
         }
       });
-      document.addEventListener('pointerup', () => { isMouseDown = false; paintState = null; isPaint(event); });
+
+      document.addEventListener('pointerup', () => {
+        isMouseDown = false;
+        paintState = null;
+        isPaint(event);
+        //scrollToPrevChar(event);
+      });
+
+
       function isPaint(event) {
         // check if the event target is a paintable cell
         const isPaintable = event.target.tagName === 'TD' &&
@@ -1761,23 +1935,15 @@ ${dataLines.join('\n')}
         }
         waitforGenerateF();
       }
-      function waitforGenerateF() {
-        if (isGenerating) return;
-        if (document.getElementById('liveUpdate').checked) {
-          document.getElementById('generate').style.visibility = 'hidden';
-          document.getElementById('generate').style.pointerEvents = 'none';
-          clearTimeout(generateTimer);
 
-          generateTimer = setTimeout(() => {
-            if (!isMouseDown) {
-              generateF();
-            }
-          }, 1500);
-        }
-        else {
-          document.getElementById('generate').style.visibility = 'visible';
-          document.getElementById('generate').style.pointerEvents = 'auto';
-        }
+
+      function waitforGenerateF() {
+        editorFont.renderGlyphs(3); // 2x scale
+        getGlyphs();
+        renderGlyphPreview();
+        document.getElementById('generate').style.border = '2px solid red';
+        //document.getElementById('generate').style.pointerEvents = 'auto';
+
       }
 
 
