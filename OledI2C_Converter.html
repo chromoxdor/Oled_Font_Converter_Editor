@@ -696,9 +696,12 @@ Copyright (c) 2016 by Fabrice Weinberg
 
         cursorX += glyph.width;
       }
+    }
+
+    function highlightGlyphs() {
       const highlightChar = document.getElementById("p" + highChar)
       if (highlightChar) {
-        document.getElementById("p" + highChar).style.background = "#ffc000";
+        highlightChar.style.background = "#ffc000";
       }
     }
 
@@ -813,6 +816,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
           container.appendChild(div);
         });
+        //  highlightGlyphs();
       }
 
       const boldnessSlider = document.getElementById('boldness');
@@ -852,6 +856,13 @@ Copyright (c) 2016 by Fabrice Weinberg
         extraTop = parseInt(extraTopInput.value) || 0;
         extraWidth = parseInt(extraWidthInput.value) || 0;
         extraBottom = parseInt(extraBottomInput.value) || 0;
+
+        const generateBtn = document.getElementById('generate');
+        if (generateBtn) {
+          generateBtn.style.visibility = 'hidden';
+          generateBtn.style.pointerEvents = 'none';
+        }
+        generateBtn.style.border = '2px solid red';
 
         let file = fileInput.files[0];
         try {
@@ -1430,6 +1441,8 @@ ${dataLines.join('\n')}
 
           container.appendChild(div);
         });
+
+        highlightGlyphs();
       };
 
       // parse button event
@@ -1544,7 +1557,6 @@ ${dataLines.join('\n')}
           parseFont();           // update preview
           hideOverlay();
         }, 50); // 50ms is enough for repaint
-
         setTimeout(() => {
           isGenerating = false;        // hide overlay after done
         }, 1000); // 50ms is enough for repaint
@@ -1558,6 +1570,7 @@ ${dataLines.join('\n')}
       function hideOverlay() {
         const overlay = document.getElementById('overlay');
         overlay.style.display = 'none';
+        getCharDivs();
       }
 
       function invertChars() {
@@ -1716,9 +1729,16 @@ ${dataLines.join('\n')}
         editorFont.renderGlyphs(3);
       }
 
-      function scrollToPrevChar(e) {
-        const charItem = e.target.closest(".char-item");
-        if (!charItem) return;
+      function getCharDivs() {
+        document.querySelectorAll(".char-item").forEach(item => {
+          // item.addEventListener("click", scrollToPreviewChar);
+          console.log('added click listener to char-item');
+        });
+      }
+
+      function scrollToPreviewChar(e) {
+        const charItem = e.target.closest('.char-item');
+        if (!charItem || !e.currentTarget.contains(charItem)) return;
 
         const caption = charItem.querySelector("caption[id^='char-']");
         if (!caption) return;
@@ -1727,13 +1747,18 @@ ${dataLines.join('\n')}
         if (!match) return;
 
         const charNum = match[1];
-        highChar = charNum; // update global variable
-        const scrollTarget = document.getElementById("p" + charNum);
+        highChar = charNum;
+        if (
+          e.target === charItem ||
+          e.target.tagName === "TABLE" ||
+          e.target.tagName === "CAPTION"
+        ) {
+          editorFont.renderGlyphs(3);
+        }
 
+        const scrollTarget = document.getElementById("p" + charNum);
         if (scrollTarget) {
           const scrollContainer = document.getElementById("glyphsbox");
-
-          // Scroll to center
           scrollContainer.scrollTo({
             top: scrollTarget.offsetTop - scrollContainer.clientHeight / 2 + scrollTarget.clientHeight / 2,
             behavior: "smooth"
@@ -1749,9 +1774,10 @@ ${dataLines.join('\n')}
       // pointerdown handles both toggling pixels and action buttons
       document.getElementById('chars').addEventListener('pointerdown', function (e) {
         if (e.button !== 0) return; // left button only
-        scrollToPrevChar(e);
+        scrollToPreviewChar(e);
         const target = e.target.closest('td[action="toggle"], th[action]');
         if (!target) return;
+        if(target.classList.contains('out')) editorFont.renderGlyphs(); return;// ignore out cells
         waitforGenerateF()
         const action = target.getAttribute('action') || '';
 
@@ -1925,10 +1951,26 @@ ${dataLines.join('\n')}
       });
 
 
-      function isPaint(event) {
-        // check if the event target is a paintable cell
-        const isPaintable = event.target.tagName === 'TD' &&
-          event.target.closest('.char-item'); // make sure it belongs to a glyph
+      function isPaint(e) {
+        const td = e.target.closest('td');                // the cell (or null)
+        const charItem = td && td.closest('.char-item');  // ensure it's inside a char
+
+        const isPaintable = Boolean(
+          td &&                                     // we found a td
+          charItem &&                               // it's inside a .char-item
+          td.getAttribute('action') === 'toggle' && // optional: only toggle-action cells
+          !td.classList.contains('out')             // AND it does NOT have class "out"
+        );
+
+        // debug output (very useful)
+        console.log({
+          target: e.target,
+          td,
+          tdTag: td?.tagName,
+          classList: td?.classList?.toString(),
+          insideCharItem: !!charItem,
+          isPaintable
+        });
 
         if (!isPaintable) {
           return;
@@ -1941,6 +1983,7 @@ ${dataLines.join('\n')}
         editorFont.renderGlyphs(3); // 2x scale
         getGlyphs();
         renderGlyphPreview();
+
         document.getElementById('generate').style.border = '2px solid red';
         //document.getElementById('generate').style.pointerEvents = 'auto';
 
