@@ -1447,6 +1447,7 @@ ${dataLines.join('\n')}
 
       // parse button event
       document.getElementById('parse').addEventListener('click', function () {
+        highChar=null;
         pendingGeneration();
         setTimeout(() => {
           parseFont(true);
@@ -1570,7 +1571,6 @@ ${dataLines.join('\n')}
       function hideOverlay() {
         const overlay = document.getElementById('overlay');
         overlay.style.display = 'none';
-        getCharDivs();
       }
 
       function invertChars() {
@@ -1728,6 +1728,8 @@ ${dataLines.join('\n')}
         // Refresh preview after all edits
         editorFont.renderGlyphs(3);
       }
+
+
 
       function scrollToPreviewChar(e) {
         const charItem = e.target.closest('.char-item');
