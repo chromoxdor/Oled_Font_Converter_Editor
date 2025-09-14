@@ -705,6 +705,10 @@ Copyright (c) 2016 by Fabrice Weinberg
       }
     }
 
+    function clearHighlight()  {
+     document.querySelectorAll('.glyph').forEach(g => g.style.background = '');
+    }
+
     var glyphs = []; // global
     let fontFace, fontName = 'MyFont';
     let fontSize = 20, extraTop = 0, extraWidth = 0, extraBottom = 0;
@@ -1638,7 +1642,10 @@ ${dataLines.join('\n')}
             const match = label.textContent.match(/^#(\d+)/);
             if (match) {
               const charCode = parseInt(match[1], 10);
-              jumpToChar(charCode); // call your jump function
+              highChar = charCode;
+              clearHighlight();  
+              highlightGlyphs(); 
+              jumpToChar(charCode); // call your jump function        
             }
           });
         });
@@ -1759,6 +1766,7 @@ ${dataLines.join('\n')}
             behavior: "smooth"
           });
         }
+        getGlyphs();
       }
 
       window.applyActionToAll = applyActionToAll;
