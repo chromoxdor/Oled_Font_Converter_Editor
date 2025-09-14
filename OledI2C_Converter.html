@@ -1729,13 +1729,6 @@ ${dataLines.join('\n')}
         editorFont.renderGlyphs(3);
       }
 
-      function getCharDivs() {
-        document.querySelectorAll(".char-item").forEach(item => {
-          // item.addEventListener("click", scrollToPreviewChar);
-          console.log('added click listener to char-item');
-        });
-      }
-
       function scrollToPreviewChar(e) {
         const charItem = e.target.closest('.char-item');
         if (!charItem || !e.currentTarget.contains(charItem)) return;
@@ -1777,7 +1770,7 @@ ${dataLines.join('\n')}
         scrollToPreviewChar(e);
         const target = e.target.closest('td[action="toggle"], th[action]');
         if (!target) return;
-        if(target.classList.contains('out')) editorFont.renderGlyphs(); return;// ignore out cells
+        if (target.classList.contains('out')) {editorFont.renderGlyphs(); return;}// ignore out cells
         waitforGenerateF()
         const action = target.getAttribute('action') || '';
 
@@ -1961,16 +1954,6 @@ ${dataLines.join('\n')}
           td.getAttribute('action') === 'toggle' && // optional: only toggle-action cells
           !td.classList.contains('out')             // AND it does NOT have class "out"
         );
-
-        // debug output (very useful)
-        console.log({
-          target: e.target,
-          td,
-          tdTag: td?.tagName,
-          classList: td?.classList?.toString(),
-          insideCharItem: !!charItem,
-          isPaintable
-        });
 
         if (!isPaintable) {
           return;
