@@ -620,16 +620,19 @@ Copyright (c) 2016 by Fabrice Weinberg
       renderGlyphPreview();
     });
 
+
     function jumpToChar(code) {
       const el = document.getElementById(`char-${code}`);
+      const parentCharItem = el.closest('.char-item');
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.style.background = "yellow"; // optional highlight
-        setTimeout(() => el.style.background = "", 1000);
+        parentCharItem.style.background = "#ffc000"; // optional highlight
+        setTimeout(() => parentCharItem.style.background = "", 2000);
       } else {
         alert(`Char ${code} not found`);
       }
     }
+
 
     function openGlyphTable() {
       document.getElementById('glyphsbox').style.border = "1px solid #767676";
@@ -707,6 +710,7 @@ Copyright (c) 2016 by Fabrice Weinberg
 
     function clearHighlight()  {
      document.querySelectorAll('.glyph').forEach(g => g.style.background = '');
+    // document.querySelectorAll('.char-item').forEach(g => g.style.background = '');
     }
 
     var glyphs = []; // global
