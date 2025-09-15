@@ -1512,10 +1512,10 @@ ${dataLines.join('\n')}
           srollToEditor();
           hideOverlay();
           editorFont.renderGlyphs(3); // 2x scale
-          getGlyphs();
           renderGlyphPreview();
         }
-
+  getGlyphs();
+  
         document.getElementById('generate').style.border = '1px solid #767676';
       }
 
