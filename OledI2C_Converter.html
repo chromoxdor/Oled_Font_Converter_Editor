@@ -241,6 +241,7 @@ Copyright (c) 2016 by Fabrice Weinberg
       border: 1px solid #ddd;
       border-radius: 6px;
       background: #fff;
+      transition: 0.6s;
     }
 
     .char-item table {
@@ -332,6 +333,7 @@ Copyright (c) 2016 by Fabrice Weinberg
     #warningWrap {
       width: 0;
       transition: 0.4s;
+      overflow: auto;
     }
 
     #previewBtn {
@@ -626,8 +628,9 @@ Copyright (c) 2016 by Fabrice Weinberg
       const parentCharItem = el.closest('.char-item');
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.querySelectorAll('.char-item').forEach(g => g.style.background = '');
         parentCharItem.style.background = "#ffc000"; // optional highlight
-        setTimeout(() => parentCharItem.style.background = "", 2000);
+        setTimeout(() => parentCharItem.style.background = "", 3000);
       } else {
         alert(`Char ${code} not found`);
       }
@@ -708,9 +711,9 @@ Copyright (c) 2016 by Fabrice Weinberg
       }
     }
 
-    function clearHighlight()  {
-     document.querySelectorAll('.glyph').forEach(g => g.style.background = '');
-    // document.querySelectorAll('.char-item').forEach(g => g.style.background = '');
+    function clearHighlight() {
+      document.querySelectorAll('.glyph').forEach(g => g.style.background = '');
+      // document.querySelectorAll('.char-item').forEach(g => g.style.background = '');
     }
 
     var glyphs = []; // global
@@ -1455,7 +1458,7 @@ ${dataLines.join('\n')}
 
       // parse button event
       document.getElementById('parse').addEventListener('click', function () {
-        highChar=null;
+        highChar = null;
         pendingGeneration();
         setTimeout(() => {
           parseFont(true);
@@ -1648,8 +1651,8 @@ ${dataLines.join('\n')}
             if (match) {
               const charCode = parseInt(match[1], 10);
               highChar = charCode;
-              clearHighlight();  
-              highlightGlyphs(); 
+              clearHighlight();
+              highlightGlyphs();
               jumpToChar(charCode); // call your jump function        
             }
           });
@@ -1785,7 +1788,7 @@ ${dataLines.join('\n')}
         scrollToPreviewChar(e);
         const target = e.target.closest('td[action="toggle"], th[action]');
         if (!target) return;
-        if (target.classList.contains('out')) {editorFont.renderGlyphs(); return;}// ignore out cells
+        if (target.classList.contains('out')) { editorFont.renderGlyphs(); return; }// ignore out cells
         waitforGenerateF()
         const action = target.getAttribute('action') || '';
 
