@@ -1514,8 +1514,8 @@ ${dataLines.join('\n')}
           editorFont.renderGlyphs(3); // 2x scale
           renderGlyphPreview();
         }
-  getGlyphs();
-  
+        getGlyphs();
+
         document.getElementById('generate').style.border = '1px solid #767676';
       }
 
@@ -1662,6 +1662,7 @@ ${dataLines.join('\n')}
 
       function applyActionToAll(action) {
         // find all char-item tables
+        let tr = false
         const tables = document.querySelectorAll('.char-item table');
 
         tables.forEach(table => {
@@ -1737,12 +1738,12 @@ ${dataLines.join('\n')}
                 }
               }
               table.jumpData[3] = xAdv;
+              tr = true
             } break;
           }
         });
-
-        // Refresh preview after all edits
-        editorFont.renderGlyphs(3);
+         // Refresh preview after all edits
+        tr ? generateF() : waitforGenerateF();
       }
 
 
